@@ -6,7 +6,7 @@ using UnityEngine.UI;
 //TODO: Handle if the elements are taller than the layout group.
 public class PackedVerticalLayoutGroup : VerticalLayoutGroup
 {
-    void Update()
+    new void Update()
     {
         RectTransform layoutRect = GetComponent<RectTransform>();
         if (layoutRect != null)

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 //TODO: Handle if elements are wider than the layout group
 public class PackedHorizontalLayoutGroup : HorizontalLayoutGroup
 {
-    void Update()
+    new void Update()
     {
         RectTransform layoutRect = GetComponent<RectTransform>();
         if (layoutRect != null)
@@ -20,7 +20,7 @@ public class PackedHorizontalLayoutGroup : HorizontalLayoutGroup
                     widthOfChildren += r.rect.width;
                 }
             }
-            spacing = -layoutRect.rect.width + widthOfChildren;
+            //spacing = -layoutRect.rect.width + widthOfChildren;
         }
     }
 }
