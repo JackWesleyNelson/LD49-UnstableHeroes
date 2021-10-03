@@ -560,18 +560,23 @@ public class GameFlowController : MonoBehaviour
 
     public void OnRestButton()
     {
+        StartCoroutine(OnRest());
+    }
+
+    public IEnumerator OnRest()
+    {
+        ClearActionButtonsPanel();
+
         int prevHP = currentUnit.currentHP;
         currentUnit.Rest();
-        int newHP= currentUnit.currentHP;
-        DisplayMessage($"{currentUnit.name} rested, restoring {newHP-prevHP} HP.");
-
+        int newHP = currentUnit.currentHP;
+        DisplayMessage($"{currentUnit.name} rested, restoring {newHP - prevHP} HP.");
+        while (messageBoxNeedsUserConfirmation)
+        {
+            yield return null;
+        }
         currentUnitTakingAction = false;
     }
-    
-    /// <summary>
-    /// Make at least the buttons that have targets coroutines so that we can wait on a list of buttons generated from the alive units to tell us who we need to target!
-    /// </summary>
-
 
     public void OnAttackButton()
     {
@@ -709,7 +714,6 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnIntimidate()
     {
-        yield return null;
         ClearActionButtonsPanel();
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Intimidate();
@@ -757,7 +761,6 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnDefensiveStance()
     {
-        yield return null;
         ClearActionButtonsPanel();
         if (currentUnit.defensiveStance > 0)
         {
