@@ -6,7 +6,7 @@ using UnityEngine;
 public class Unit
 {
     public string name;
-    public int level, damage, restoration, maxHP, currentHP, currentThreatLevel = 5, maxThreatLevel = 9, MinThreatLevel = 1, defensiveStance;
+    public int level, damage, restoration, maxHP, currentHP, currentThreatLevel = 5, maxThreatLevel = 9, MinThreatLevel = 0, defensiveStance;
     public bool turnTaken;
     public List<(Action, String)> stableActionsAndNames = new List<(Action, string)>();
 
@@ -64,6 +64,10 @@ public class Unit
 
     public void Heal(int health)
     {
+        if(health < 0)
+        {
+            health++;
+        }
         currentHP += health;
         if(currentHP > maxHP) currentHP = maxHP;
     }
