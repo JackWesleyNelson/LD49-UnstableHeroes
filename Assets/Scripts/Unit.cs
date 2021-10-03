@@ -43,10 +43,10 @@ public class Unit
     {
         if (defensiveStance > 0)
         {
-            damage /= 2;
+            damage = Mathf.Clamp( damage / 2, 1, damage);
         }
         this.currentHP -= damage;
-        if(currentHP < 0)
+        if(currentHP <= 0)
         {
             return true;
         }
@@ -55,7 +55,11 @@ public class Unit
 
     public bool IsDead()
     {
-        return TakeDamage(0);
+        if(currentHP <= 0)
+        {
+            return true;
+        }
+        return false;
     }
 
     public void Heal(int health)

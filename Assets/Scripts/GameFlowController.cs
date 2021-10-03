@@ -62,9 +62,14 @@ public class GameFlowController : MonoBehaviour
 
 
     private int currentBattle = 2;
+    private int turn = 1;
 
     private List<Unit> heroesMasterList = new List<Unit> { new Unit("Warrior", 1, 3, 1, 10), new Unit("Rogue", 1, 2, 1, 5), new Unit("Cleric", 1, 1, 4, 5) };
     private List<Unit> heroesCurrentBattleList = new List<Unit>();
+    private Unit goblin = new Unit("Goblin", 1, 1, 1, 5); 
+    private Unit goblinCleric = new Unit("Goblin Cleric", 1, 1, 4, 4);
+    private Unit ogre = new Unit("Ogre", 3, 3, 1, 10);
+
     private List<List<Unit>> enemiesInEachBattleMasterList = new List<List<Unit>> {
         //Battle 1
         new List<Unit>{ new Unit("Goblin", 1, 1, 1, 5) },
@@ -78,13 +83,20 @@ public class GameFlowController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        buttonActionsAndNames.AddRange(new List<(Action, String)>{(OnAttackButton, "Attack"), 
-                                                                (OnDefensiveStanceButton, "Defensive Stance"), 
+        buttonActionsAndNames.AddRange(new List<(Action, String)>{(OnDefensiveStanceButton, "Defensive Stance"), 
                                                                 (OnHealButton, "Heal"), 
                                                                 (OnHideButton, "Hide"), 
                                                                 (OnIntimidateButton, "Intimidate"), 
                                                                 (OnRestButton, "Rest"), 
                                                                 (OnSneakAttackButton, "Sneak Attack")});
+
+        foreach(Unit hero in heroesMasterList)
+        {
+            hero.stableActionsAndNames.Add((OnAttackButton, "Attack"));
+        }
+
+
+
         if (gameState == GameState.TITLE)
         {
             StartCoroutine(Title());
@@ -226,15 +238,16 @@ public class GameFlowController : MonoBehaviour
         battleStartUI.SetActive(true);
         UpdateTurnOrderPanel();
         gameState = GameState.PLAYER_TURN;
+        turn = 1;
         StartCoroutine(PlayerTurn());
         while (true){
-            //Display text for the battle here, until all the text has been advanced through.
+            if(gameState == GameState.BATTLE_LOST || gameState == GameState.BATTLE_WON) 
+            {
+                battleStartUI.SetActive(false);
+                break;
+            }
             yield return null;
         }
-        //We probably want to set this false after the battle moves to the win or lose state.
-        //battleStartUI.SetActive(false);
-        
-
     }
 
     private void BattleStartInput()
@@ -334,6 +347,10 @@ public class GameFlowController : MonoBehaviour
                         rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, defaultHeight + heightToAdd);
                         rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, rectTransform.anchoredPosition3D.y -heightToAdd/2);
                     }
+                    if(child.gameObject.name == "HP")
+                    {
+                        child.GetComponent<TextMeshProUGUI>().SetText($"HP\n {unit.currentHP} / {unit.maxHP}");
+                    }
                     
                 }
                 go.transform.SetParent(turnOrderPanel.transform);
@@ -365,9 +382,23 @@ public class GameFlowController : MonoBehaviour
             //Take their turn
             if (currentUnit != null)
             {
-                messageBoxNeedsUserConfirmation = true;
                 DisplayMessage(currentUnit.name + " is the acting hero!");
-                currentUnit.defensiveStance--;
+                while (messageBoxNeedsUserConfirmation)
+                {
+                    yield return null;
+                }
+                if (currentUnit.defensiveStance > 0)
+                {
+                    currentUnit.defensiveStance--;
+                    if (currentUnit.defensiveStance == 0)
+                    {
+                        DisplayMessage($"{currentUnit.name} is no longer in a defensive stance.");
+                        while (messageBoxNeedsUserConfirmation)
+                        {
+                            yield return null;
+                        }
+                    }
+                }
                 currentUnitTakingAction = true;
                 //Set the actions for this round.
                 foreach(Transform child in actionButtonsPanel.transform)
@@ -435,12 +466,14 @@ public class GameFlowController : MonoBehaviour
 
                 if (CheckBattleLost())
                 {
+                    Debug.Log("Players have Lost");
                     gameState = GameState.BATTLE_LOST;
                     StartCoroutine(BattleLost());
                     break;
                 }
                 if (CheckBattleWon())
                 {
+                    Debug.Log("Players have Won");
                     gameState = GameState.BATTLE_WON;
                     StartCoroutine(BattleWon());
                     break;
@@ -448,14 +481,18 @@ public class GameFlowController : MonoBehaviour
             }
             else
             {
-                //All players have acted, so break.
-                Debug.Log("All players acted");
+                foreach(Unit hero in heroesCurrentBattleList)
+                {
+                    hero.turnTaken = false;
+                }
                 break;
             }
         }
-        //playerTurnUI.SetActive(false);
-        gameState = GameState.ENEMY_TURN;
-        StartCoroutine(EnemyTurn());
+        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON)
+        {
+            gameState = GameState.ENEMY_TURN;
+            StartCoroutine(EnemyTurn());
+        }            
     }
 
     private void PlayerTurnInput()
@@ -470,10 +507,177 @@ public class GameFlowController : MonoBehaviour
     #region EnemyTurn
     private IEnumerator EnemyTurn()
     {
-        Debug.Log("Enemy turn begin");
-        enemyTurnUI.SetActive(true);
-        yield return null;
-        enemyTurnUI.SetActive(true);
+        while (true)
+        {
+            List<Unit> highestThreatsTargets = new List<Unit>();
+            Unit highestThreatUnit = null;
+            int highestThreatCount = 0;
+            foreach(Unit hero in heroesCurrentBattleList)
+            {
+                if (!hero.IsDead())
+                {
+                    if(hero.currentThreatLevel > highestThreatCount)
+                    {
+                        highestThreatsTargets.Clear();
+                        highestThreatsTargets.Add(hero);
+                        highestThreatCount = hero.currentThreatLevel;
+                    }
+                    else if(hero.currentThreatLevel == highestThreatCount)
+                    {
+                        highestThreatsTargets.Add(hero);
+                    }
+                }
+            }
+            highestThreatUnit = highestThreatsTargets[UnityEngine.Random.Range(0, highestThreatsTargets.Count)];
+
+
+            List<Unit> woundedUnits = new List<Unit>();
+            Unit mostWoundedUnit = null;
+            int mostHealingNeeded = 0;
+            //Fetch a enemy that hasn't taken their turn.
+            currentUnit = null;
+            foreach (Unit enemy in enemiesCurrentBattleList)
+            {
+                if (!enemy.IsDead())
+                {
+                    if(enemy.maxHP > enemy.currentHP)
+                    {
+                        if(enemy.maxHP-enemy.currentHP > mostHealingNeeded)
+                        {
+                            woundedUnits.Clear();
+                            woundedUnits.Add(enemy);
+                            mostHealingNeeded = enemy.maxHP-enemy.currentHP;
+                        }
+                        else if (enemy.maxHP - enemy.currentHP == mostHealingNeeded)
+                        {
+                            woundedUnits.Add(enemy);
+                        }
+                    }
+                    if(currentUnit == null && !enemy.turnTaken)
+                    {
+                        currentUnit = enemy;
+                    }
+                }
+            }
+            if(woundedUnits.Count > 0)
+            {
+                mostWoundedUnit = woundedUnits[UnityEngine.Random.Range(0, woundedUnits.Count)];
+            }
+            
+
+            //Take their turn
+            if (currentUnit != null)
+            {
+                DisplayMessage($"The enemy {currentUnit.name} is about to act!");
+                while (messageBoxNeedsUserConfirmation)
+                {
+                    yield return null;
+                }
+                
+                if(currentUnit.defensiveStance > 0)
+                {
+                    currentUnit.defensiveStance--;
+                    if(currentUnit.defensiveStance == 0)
+                    {
+                        DisplayMessage($"{currentUnit.name} is no longer in a defensive stance.");
+                        while (messageBoxNeedsUserConfirmation)
+                        {
+                            yield return null;
+                        }
+                    }
+                }
+                currentUnitTakingAction = true;
+                if(turn % 4 == 0 && currentUnit.name == "Ogre")
+                {
+                    DisplayMessage("The ogre lets loose a sweeping attack!");
+                    while (messageBoxNeedsUserConfirmation)
+                    {
+                        yield return null;
+                    }
+                    foreach(Unit hero in heroesCurrentBattleList)
+                    {
+                        currentUnitTakingAction = true;
+                        currentTarget = hero;
+                        StartCoroutine(OnAttack());
+                        while (currentUnitTakingAction)
+                        {
+                            yield return null;
+                        }
+                    }
+                }
+                else if (turn % 3 == 0 && currentUnit.name == "Ogre")
+                {
+                    DisplayMessage("The Ogre is winding up an attack!");
+                    while (messageBoxNeedsUserConfirmation)
+                    {
+                        yield return null;
+                    }
+                    currentUnitTakingAction = false;
+                }
+                else
+                {
+                    float r = UnityEngine.Random.Range(0f, 1f);
+                    if (mostWoundedUnit != null && currentUnit.name == "Goblin Cleric")
+                    {
+                        currentTarget = mostWoundedUnit;
+                        StartCoroutine(OnHeal());
+                    }
+                    else if(currentUnit.defensiveStance == 0 && r > .75f)
+                    {
+                        StartCoroutine(OnDefensiveStance());
+                    }
+                    else if(currentUnit.maxHP > currentUnit.currentHP && r > .5f)
+                    {
+                        StartCoroutine(OnRest());
+                    }
+                    else
+                    {
+                        currentTarget = highestThreatUnit;
+                        StartCoroutine(OnAttack());
+                    }
+                }
+
+                while (currentUnitTakingAction)
+                {
+                    yield return null;
+                }
+
+                currentUnit.turnTaken = true;
+                currentTarget = null;
+                actionAndNameToStabilize = (null, null);
+
+                UpdateTurnOrderPanel();
+
+                if (CheckBattleLost())
+                {
+                    Debug.Log("Players Have Lost");
+                    gameState = GameState.BATTLE_LOST;
+                    StartCoroutine(BattleLost());
+                    break;
+                }
+                if (CheckBattleWon())
+                {
+                    Debug.Log("Players have won");
+                    gameState = GameState.BATTLE_WON;
+                    StartCoroutine(BattleWon());
+                    break;
+                }
+            }
+            else
+            {
+                foreach(Unit enemy in enemiesCurrentBattleList)
+                {
+                    enemy.turnTaken = false;
+                }
+                turn++;
+                break;
+            }
+        }
+        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON)
+        {
+            gameState = GameState.PLAYER_TURN;
+            StartCoroutine(PlayerTurn());
+        }
     }
 
     private void EnemyTurnInput()
@@ -488,6 +692,7 @@ public class GameFlowController : MonoBehaviour
     #region BattleWon
     private IEnumerator BattleWon()
     {
+        Debug.Log("Battle Won");
         battleWonUI.SetActive(true);
         yield return null;
         battleWonUI.SetActive(false);
@@ -510,6 +715,7 @@ public class GameFlowController : MonoBehaviour
                 return false;
             }
         }
+        Debug.Log("Battle won");
         return true;
     }
     #endregion
@@ -517,6 +723,7 @@ public class GameFlowController : MonoBehaviour
     #region BattleLost
     private IEnumerator BattleLost()
     {
+        Debug.Log("Battle Lost");
         battleLostUI.SetActive(true);
         yield return null;
         battleLostUI.SetActive(false);
@@ -539,6 +746,7 @@ public class GameFlowController : MonoBehaviour
                 return false;
             }
         }
+        Debug.Log("battle lost");
         return true;
     }
     #endregion    
@@ -662,7 +870,31 @@ public class GameFlowController : MonoBehaviour
             yield return null;
         }
         ClearActionButtonsPanel();
-        if (currentUnit.currentThreatLevel <= 3)
+        bool lowestThreat = true;
+        if (heroesCurrentBattleList.Contains(currentUnit))
+        {
+            foreach(Unit hero in heroesCurrentBattleList)
+            {
+                if(currentUnit.currentThreatLevel >= hero.currentThreatLevel)
+                {
+                    lowestThreat = false;
+                    break;
+                }
+            }
+        }
+        if (enemiesCurrentBattleList.Contains(currentUnit))
+        {
+            foreach(Unit enemy in enemiesCurrentBattleList)
+            {
+                if(currentUnit.currentThreatLevel >= enemy.currentThreatLevel)
+                {
+                    lowestThreat = false;
+                    break;
+                }
+            }
+        }
+
+        if (lowestThreat)
         {
             int prevHealth = currentTarget.currentHP;
             bool fatal = currentTarget.TakeDamage(currentUnit.damage * 3);
@@ -674,10 +906,7 @@ public class GameFlowController : MonoBehaviour
             }
             if (fatal)
             {
-                int prevThreat = currentUnit.currentThreatLevel;
-                currentUnit.ModifyThreat(3);
-                int newThreat = currentUnit.currentThreatLevel;
-                DisplayMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat - prevThreat}.");
+                DisplayMessage($"{currentTarget.name} has taken fatal damage, but no one noticed. {currentUnit.name} increased threat remains {currentUnit.currentThreatLevel}.");
                 while (messageBoxNeedsUserConfirmation)
                 {
                     yield return null;
@@ -686,7 +915,7 @@ public class GameFlowController : MonoBehaviour
             else
             {
                 int prevThreat = currentUnit.currentThreatLevel;
-                currentUnit.ModifyThreat(1);
+                currentUnit.ModifyThreat(2);
                 int newThreat = currentUnit.currentThreatLevel;
                 DisplayMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
                 while (messageBoxNeedsUserConfirmation)
@@ -841,6 +1070,7 @@ public class GameFlowController : MonoBehaviour
 
     private void TargetSelection()
     {
+        if(currentTarget != null) { return; }
         foreach (Transform child in actionButtonsPanel.transform)
         {
             child.gameObject.SetActive(false);
