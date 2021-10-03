@@ -408,6 +408,8 @@ public class GameFlowController : MonoBehaviour
                     
                 }
                 go.transform.SetParent(turnOrderPanel.transform);
+                float heightToMatch = turnOrderPanel.transform.GetComponent<RectTransform>().sizeDelta.y - 4;
+                go.transform.localScale = new Vector3(heightToMatch/200, heightToMatch/200, go.transform.localScale.z);
                 currentCount++;
                 if (currentCount >= maxCount) { break; }
             }
@@ -927,7 +929,7 @@ public class GameFlowController : MonoBehaviour
         bool fatal = currentTarget.TakeDamage(currentUnit.damage);
         int newHealth = currentTarget.currentHP;
 
-        DisplayBattleMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth-newHealth}.");
+        DisplayBattleMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth-newHealth} damage.");
         while (messageBoxNeedsUserConfirmation)
         {
             yield return null;

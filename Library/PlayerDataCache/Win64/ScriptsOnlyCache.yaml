@@ -4,6 +4,7 @@ ScriptsOnlyBuild:
     - GameFlowController
     - PackedHorizontalLayoutGroup
     - PackedVerticalLayoutGroup
+    - PlayMusic
     - ShowLabelOnHover
     Unity.2D.Animation.Editor.dll:
     - UnityEditor.U2D.Animation.BoneGizmo
@@ -37,7 +38,6 @@ ScriptsOnlyBuild:
     - UnityEngine.EventSystems.StandaloneInputModule
     - UnityEngine.UI.Button
     - UnityEngine.UI.CanvasScaler
-    - UnityEngine.UI.ContentSizeFitter
     - UnityEngine.UI.GraphicRaycaster
     - UnityEngine.UI.HorizontalLayoutGroup
     - UnityEngine.UI.Image
@@ -60,6 +60,10 @@ ScriptsOnlyBuild:
     - Class: 49
       Script: {instanceID: 0}
     - Class: 81
+      Script: {instanceID: 0}
+    - Class: 82
+      Script: {instanceID: 0}
+    - Class: 83
       Script: {instanceID: 0}
     - Class: 104
       Script: {instanceID: 0}
@@ -92,15 +96,15 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 3382}
     - Class: 114
-      Script: {instanceID: 3604}
-    - Class: 114
       Script: {instanceID: 3624}
     - Class: 114
       Script: {instanceID: 3766}
     - Class: 114
-      Script: {instanceID: 4710}
+      Script: {instanceID: 3906}
     - Class: 114
-      Script: {instanceID: 5086}
+      Script: {instanceID: 4712}
+    - Class: 114
+      Script: {instanceID: 5088}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -450,6 +454,12 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.UI.dll
     namespaceName: UnityEngine.EventSystems
     className: BaseInput
+  - hash:
+      serializedVersion: 2
+      Hash: 44f976d332651cfd143643dd5b2975fb
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: PlayMusic
   - hash:
       serializedVersion: 2
       Hash: 18c222bef9ae745ce69ddde9b74337ca
