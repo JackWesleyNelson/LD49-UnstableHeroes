@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,17 +6,20 @@ using UnityEngine;
 public class Unit
 {
     public string name;
-    public int level, damage, maxHP, currentHP, currentThreatLevel = 5, maxThreatLevel = 9, MinThreatLevel = 1;
+    public int level, damage, restoration, maxHP, currentHP, currentThreatLevel = 5, maxThreatLevel = 9, MinThreatLevel = 1, defensiveStance;
     public bool turnTaken;
+    public List<(Action, String)> stableActionsAndNames = new List<(Action, string)>();
 
-    public Unit(string name, int level, int damage, int maxHP)
+    public Unit(string name, int level, int damage, int restoration, int maxHP)
     {
         this.name = name;
         this.level = level;
         this.damage = damage;
+        this.restoration = restoration;
         this.maxHP = maxHP;
         this.currentHP = maxHP;
         this.turnTaken = false;
+        this.defensiveStance = 0;
     }
 
     public Unit(Unit unit)
@@ -23,13 +27,24 @@ public class Unit
         this.name = unit.name;
         this.level = unit.level;
         this.damage = unit.damage;
+        this.restoration = unit.restoration;
         this.maxHP = unit.maxHP;
         this.currentHP = unit.maxHP;
+        this.currentThreatLevel = unit.currentThreatLevel;
         this.turnTaken = false;
+        this.defensiveStance = unit.defensiveStance;
+        foreach((Action,String) pair in unit.stableActionsAndNames)
+        {
+            this.stableActionsAndNames.Add(pair);
+        }
     }
 
     public bool TakeDamage(int damage)
     {
+        if (defensiveStance > 0)
+        {
+            damage /= 2;
+        }
         this.currentHP -= damage;
         if(currentHP < 0)
         {
@@ -66,7 +81,7 @@ public class Unit
 
     public void ModifyThreat(int toAdd)
     {
-        currentThreatLevel -= toAdd;
+        currentThreatLevel += toAdd;
         currentThreatLevel = Mathf.Clamp(currentThreatLevel, MinThreatLevel, maxThreatLevel);
     }
 

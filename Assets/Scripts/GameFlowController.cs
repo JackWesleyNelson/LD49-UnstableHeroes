@@ -15,15 +15,19 @@ public class GameFlowController : MonoBehaviour
     private bool titleWaitingOnInput = true;
     private bool messageBoxNeedsUserConfirmation = false;
     private bool currentUnitTakingAction = false;
+    private bool pausedGame = false;
    
     private Unit currentUnit = null;
     private Unit currentTarget = null;
+    private (Action, String) actionAndNameToStabilize = (null, null);
 
     private readonly List<KeyCode> enterKey = new List<KeyCode> { KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space,  KeyCode.Mouse0};
     private readonly List<KeyCode> upKey = new List<KeyCode> { KeyCode.UpArrow, KeyCode.W };
     private readonly List<KeyCode> downKey = new List<KeyCode> { KeyCode.DownArrow, KeyCode.S };
     private readonly List<KeyCode> leftKey = new List<KeyCode> { KeyCode.LeftArrow, KeyCode.A };
     private readonly List<KeyCode> rightKey = new List<KeyCode> { KeyCode.RightArrow, KeyCode.D };
+
+    private List<(Action, String)> buttonActionsAndNames = new List<(Action, string)>();
 
     [SerializeField]
     private GameObject titleUI = null;
@@ -34,11 +38,13 @@ public class GameFlowController : MonoBehaviour
     [SerializeField]
     private GameObject playerTurnUI = null;
     [SerializeField]
-    private GameObject enemyTurnUI= null;
+    private GameObject enemyTurnUI = null;
     [SerializeField]
     private GameObject battleWonUI = null;
     [SerializeField]
-    private GameObject battleLostUI= null;
+    private GameObject battleLostUI = null;
+    [SerializeField]
+    private GameObject pauseUI = null;
 
     [SerializeField]
     private GameObject turnMarkerPrefab = null;
@@ -47,25 +53,39 @@ public class GameFlowController : MonoBehaviour
 
     [SerializeField] 
     private GameObject messagePanel = null;
+    [SerializeField]
+    private GameObject actionButtonsPanel = null;
+    [SerializeField]
+    private GameObject actionButtonPrefab = null;
+    [SerializeField]
+    private GameObject actionGroupLabelPrefab = null;
+
 
     private int currentBattle = 2;
 
-    private List<Unit> heroesMasterList = new List<Unit> { new Unit("Warrior", 1, 3, 10), new Unit("Rogue", 1, 2, 5), new Unit("Cleric", 1, 1, 5) };
+    private List<Unit> heroesMasterList = new List<Unit> { new Unit("Warrior", 1, 3, 1, 10), new Unit("Rogue", 1, 2, 1, 5), new Unit("Cleric", 1, 1, 4, 5) };
     private List<Unit> heroesCurrentBattleList = new List<Unit>();
     private List<List<Unit>> enemiesInEachBattleMasterList = new List<List<Unit>> {
         //Battle 1
-        new List<Unit>{ new Unit("Goblin", 1, 1, 5) },
+        new List<Unit>{ new Unit("Goblin", 1, 1, 1, 5) },
         //Battle 2
-        new List<Unit>{ new Unit("Goblin", 1, 1, 5), new Unit("Goblin", 1, 1, 5) },
+        new List<Unit>{ new Unit("Goblin", 1, 1, 1, 5), new Unit("Goblin", 1, 1, 1, 5) },
         //Battle 3
-        new List<Unit>{ new Unit("Goblin", 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4), new Unit("Ogre", 3, 3, 10)}
+        new List<Unit>{ new Unit("Goblin", 1, 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Ogre", 3, 3, 1, 10) }
     };
     private List<Unit> enemiesCurrentBattleList = new List<Unit>(); 
 
     // Start is called before the first frame update
     void Start()
     {
-        if(gameState == GameState.TITLE)
+        buttonActionsAndNames.AddRange(new List<(Action, String)>{(OnAttackButton, "Attack"), 
+                                                                (OnDefensiveStanceButton, "Defensive Stance"), 
+                                                                (OnHealButton, "Heal"), 
+                                                                (OnHideButton, "Hide"), 
+                                                                (OnIntimidateButton, "Intimidate"), 
+                                                                (OnRestButton, "Rest"), 
+                                                                (OnSneakAttackButton, "Sneak Attack")});
+        if (gameState == GameState.TITLE)
         {
             StartCoroutine(Title());
         }
@@ -74,34 +94,43 @@ public class GameFlowController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        switch (gameState)
+        if (!pausedGame)
         {
-            case GameState.TITLE:
-                TitleInput();
-                break;
+            switch (gameState)
+            {
+                case GameState.TITLE:
+                    TitleInput();
+                    break;
 
-            case GameState.CHARACTER_CREATION:
-                CharacterCreationInput();
-                break;
+                case GameState.CHARACTER_CREATION:
+                    CharacterCreationInput();
+                    break;
 
-            case GameState.BATTLE_START:
-                BattleStartInput();
-                break;
+                case GameState.BATTLE_START:
+                    BattleStartInput();
+                    break;
 
-            case GameState.PLAYER_TURN:
-                PlayerTurnInput();
-                break;
-            
-            case GameState.ENEMY_TURN:
-                EnemyTurnInput();
-                break;
+                case GameState.PLAYER_TURN:
+                    PlayerTurnInput();
+                    break;
 
-            case GameState.BATTLE_WON:
-                BattleWonInput();
-                break;
-            case GameState.BATTLE_LOST:
-                BattleLostInput();
-                break;
+                case GameState.ENEMY_TURN:
+                    EnemyTurnInput();
+                    break;
+
+                case GameState.BATTLE_WON:
+                    BattleWonInput();
+                    break;
+                case GameState.BATTLE_LOST:
+                    BattleLostInput();
+                    break;
+            }
+        }
+        
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            OnPauseToggleButton();
         }
     }
 
@@ -144,16 +173,6 @@ public class GameFlowController : MonoBehaviour
     public void OnNewGameButton()
     {
         titleWaitingOnInput = false;
-    }
-
-    public void OnQuitGameButton()
-    {
-        #if UNITY_STANDALONE
-            Application.Quit();
-        #endif
-        #if UNITY_EDITOR
-            EditorApplication.ExitPlaymode();
-        #endif
     }
 
     #endregion
@@ -267,6 +286,7 @@ public class GameFlowController : MonoBehaviour
                         enemiesTurnNotTaken.Add(enemy);
                     }
                 }
+
             }
             //Fill in the order that they'll be taking their turns. For now, it's always in order, and alternating teams. 
             //TODO: Think about adding support for non-linear turn order.
@@ -328,7 +348,7 @@ public class GameFlowController : MonoBehaviour
     #region PlayerTurn
     private IEnumerator PlayerTurn()
     {
-        playerTurnUI.SetActive(true);
+        //playerTurnUI.SetActive(true);
         while(true)
         {
             //Fetch a hero that hasn't taken their turn.
@@ -347,22 +367,93 @@ public class GameFlowController : MonoBehaviour
             {
                 messageBoxNeedsUserConfirmation = true;
                 DisplayMessage(currentUnit.name + " is the acting hero!");
+                currentUnit.defensiveStance--;
                 currentUnitTakingAction = true;
+                //Set the actions for this round.
+                foreach(Transform child in actionButtonsPanel.transform)
+                {
+                    child.gameObject.SetActive(false);
+                    Destroy(child.gameObject);
+                }
+                {
+                    GameObject go = Instantiate(actionGroupLabelPrefab);
+                    go.name = $"{currentUnit.name}'s Turn Label";
+                    go.GetComponent<TextMeshProUGUI>().text = $"{currentUnit.name}'s Turn";
+                    go.transform.SetParent(actionButtonsPanel.transform);
+                }
+                if(currentUnit.stableActionsAndNames.Count > 0)
+                {
+                    {
+                        GameObject go = Instantiate(actionGroupLabelPrefab);
+                        go.name = $"Stable Actions Label";
+                        go.GetComponent<TextMeshProUGUI>().text = $"Stable Actions";
+                        go.transform.SetParent(actionButtonsPanel.transform);
+                    }
+                    foreach ((Action, String) stableActionAndName in currentUnit.stableActionsAndNames)
+                    {
+                        GameObject go = Instantiate(actionButtonPrefab);
+                        go.GetComponent<Button>().onClick.AddListener(() => stableActionAndName.Item1.Invoke());
+                        go.name = stableActionAndName.Item2 + " button";
+                        go.GetComponentInChildren<TextMeshProUGUI>().text = stableActionAndName.Item2;
+                        go.transform.SetParent(actionButtonsPanel.transform);
+                    }
+                }
+                {
+                    GameObject go = Instantiate(actionGroupLabelPrefab);
+                    go.name = $"Unstable Actions Label";
+                    go.GetComponent<TextMeshProUGUI>().text = $"Unstable Actions";
+                    go.transform.SetParent(actionButtonsPanel.transform);
+                }
+                for (int i = 0; i < 3; i++)
+                {
+                    GameObject go = Instantiate(actionButtonPrefab);
+                    (Action, String) a = buttonActionsAndNames[UnityEngine.Random.Range(0, buttonActionsAndNames.Count)];
+                    go.GetComponent<Button>().onClick.AddListener(() => a.Item1.Invoke());
+                    go.name = a.Item2 + " button";
+                    go.GetComponentInChildren<TextMeshProUGUI>().text = a.Item2;
+                    go.transform.SetParent(actionButtonsPanel.transform);
+                }
+                if(UnityEngine.Random.Range(0f, 1f) > .75)
+                {
+                    GameObject go = Instantiate(actionButtonPrefab);
+                    go.GetComponent<Button>().onClick.AddListener(() => OnStabilizeActionButton());
+                    go.name = "Stabilize Action" + " button";
+                    go.GetComponentInChildren<TextMeshProUGUI>().text = "Stabilize Action";
+                    go.transform.SetParent(actionButtonsPanel.transform);
+                }
+
                 while (currentUnitTakingAction)
                 {
                     //Get the user selection from the UI, handle the event, display the message to user and then end the turn.
                     yield return null;
                 }
                 currentUnit.turnTaken = true;
+                currentTarget = null;
+                actionAndNameToStabilize = (null, null);
+
                 UpdateTurnOrderPanel();
+
+                if (CheckBattleLost())
+                {
+                    gameState = GameState.BATTLE_LOST;
+                    StartCoroutine(BattleLost());
+                    break;
+                }
+                if (CheckBattleWon())
+                {
+                    gameState = GameState.BATTLE_WON;
+                    StartCoroutine(BattleWon());
+                    break;
+                }
             }
             else
             {
                 //All players have acted, so break.
+                Debug.Log("All players acted");
                 break;
             }
         }
-        playerTurnUI.SetActive(false);
+        //playerTurnUI.SetActive(false);
         gameState = GameState.ENEMY_TURN;
         StartCoroutine(EnemyTurn());
     }
@@ -372,7 +463,6 @@ public class GameFlowController : MonoBehaviour
         if (AnyKeyDownMatched(enterKey))
         {
             StopDisplayingMessage();
-
         }
     }
     #endregion
@@ -380,6 +470,7 @@ public class GameFlowController : MonoBehaviour
     #region EnemyTurn
     private IEnumerator EnemyTurn()
     {
+        Debug.Log("Enemy turn begin");
         enemyTurnUI.SetActive(true);
         yield return null;
         enemyTurnUI.SetActive(true);
@@ -387,6 +478,10 @@ public class GameFlowController : MonoBehaviour
 
     private void EnemyTurnInput()
     {
+        if (AnyKeyDownMatched(enterKey))
+        {
+            StopDisplayingMessage();
+        }
     }
     #endregion
 
@@ -400,6 +495,22 @@ public class GameFlowController : MonoBehaviour
 
     private void BattleWonInput()
     {
+        if (AnyKeyDownMatched(enterKey))
+        {
+            StopDisplayingMessage();
+        }
+    }
+
+    private bool CheckBattleWon()
+    {
+        foreach(Unit enemy in enemiesCurrentBattleList)
+        {
+            if (!enemy.IsDead())
+            {
+                return false;
+            }
+        }
+        return true;
     }
     #endregion
 
@@ -413,6 +524,22 @@ public class GameFlowController : MonoBehaviour
 
     private void BattleLostInput()
     {
+        if (AnyKeyDownMatched(enterKey))
+        {
+            StopDisplayingMessage();
+        }
+    }
+
+    private bool CheckBattleLost()
+    {
+        foreach(Unit hero in heroesCurrentBattleList)
+        {
+            if (!hero.IsDead())
+            {
+                return false;
+            }
+        }
+        return true;
     }
     #endregion    
 
@@ -433,31 +560,335 @@ public class GameFlowController : MonoBehaviour
 
     public void OnRestButton()
     {
-        currentUnitTakingAction = false;
         int prevHP = currentUnit.currentHP;
         currentUnit.Rest();
         int newHP= currentUnit.currentHP;
         DisplayMessage($"{currentUnit.name} rested, restoring {newHP-prevHP} HP.");
+
+        currentUnitTakingAction = false;
     }
+    
+    /// <summary>
+    /// Make at least the buttons that have targets coroutines so that we can wait on a list of buttons generated from the alive units to tell us who we need to target!
+    /// </summary>
+
 
     public void OnAttackButton()
     {
-        currentUnitTakingAction = false;
-        DisplayMessage($"{currentUnit.name} attacked {currentTarget.name} for {currentUnit.damage}.");
-        if (currentTarget.TakeDamage(currentUnit.damage))
+        StartCoroutine(OnAttack());
+    }
+
+    public IEnumerator OnAttack()
+    {
+        TargetSelection();
+
+        while (currentTarget == null)
         {
-            DisplayMessage($"{currentTarget.name} has taken fatal damage.");
+            yield return null;
+        }
+        ClearActionButtonsPanel();
+
+        int prevHealth = currentTarget.currentHP;
+        bool fatal = currentTarget.TakeDamage(currentUnit.damage);
+        int newHealth = currentTarget.currentHP;
+
+        DisplayMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth-newHealth}.");
+        while (messageBoxNeedsUserConfirmation)
+        {
+            yield return null;
+        }
+        if (fatal)
+        {
+            int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(3);
+            int newThreat = currentUnit.currentThreatLevel;
+            DisplayMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat-prevThreat}.");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
         }
         else
         {
+            int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(1);
+            int newThreat = currentUnit.currentThreatLevel;
+            DisplayMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
         }
+
+        currentUnitTakingAction = false;
     }
 
     public void OnHideButton()
     {
+        StartCoroutine(OnHide());
+    }
 
+    public IEnumerator OnHide()
+    {
+        yield return null;
+        ClearActionButtonsPanel();
+        int prevThreat = currentUnit.currentThreatLevel;
+        currentUnit.Hide();
+        int newThreat = currentUnit.currentThreatLevel;
+        DisplayMessage($"{currentUnit.name} hid, reducing threat by {prevThreat-newThreat}.");
+        while (messageBoxNeedsUserConfirmation)
+        {
+            yield return null;
+        }
+
+        currentUnitTakingAction = false;
+    }
+
+    public void OnSneakAttackButton()
+    {
+        StartCoroutine(OnSneakAttack());
+    }
+
+    public IEnumerator OnSneakAttack()
+    {
+        TargetSelection();
+        while (currentTarget == null)
+        {
+            yield return null;
+        }
+        ClearActionButtonsPanel();
+        if (currentUnit.currentThreatLevel <= 3)
+        {
+            int prevHealth = currentTarget.currentHP;
+            bool fatal = currentTarget.TakeDamage(currentUnit.damage * 3);
+            int newHealth = currentTarget.currentHP;
+            DisplayMessage($"{currentUnit.name} snuck up on {currentTarget.name}, dealing {prevHealth-newHealth} damage!");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
+            if (fatal)
+            {
+                int prevThreat = currentUnit.currentThreatLevel;
+                currentUnit.ModifyThreat(3);
+                int newThreat = currentUnit.currentThreatLevel;
+                DisplayMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat - prevThreat}.");
+                while (messageBoxNeedsUserConfirmation)
+                {
+                    yield return null;
+                }
+            }
+            else
+            {
+                int prevThreat = currentUnit.currentThreatLevel;
+                currentUnit.ModifyThreat(1);
+                int newThreat = currentUnit.currentThreatLevel;
+                DisplayMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
+                while (messageBoxNeedsUserConfirmation)
+                {
+                    yield return null;
+                }
+            }
+        }
+        else
+        {
+            DisplayMessage($"{currentUnit.name} attempted to sneak attack, but {currentTarget.name} noticed because their threat was too high.");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
+        }
+
+        currentUnitTakingAction = false;
+    }
+
+    public void OnIntimidateButton()
+    {
+        StartCoroutine(OnIntimidate());
+    }
+
+    public IEnumerator OnIntimidate()
+    {
+        yield return null;
+        ClearActionButtonsPanel();
+        int prevThreat = currentUnit.currentThreatLevel;
+        currentUnit.Intimidate();
+        int newThreat = currentUnit.currentThreatLevel;
+        DisplayMessage($"{currentUnit.name} intimidated the enemy, increasing threat by {newThreat - prevThreat}.");
+        while (messageBoxNeedsUserConfirmation)
+        {
+            yield return null;
+        }
+
+        currentUnitTakingAction = false;
+    }
+
+    public void OnHealButton()
+    {
+        StartCoroutine(OnHeal());
+    }
+
+    public IEnumerator OnHeal()
+    {
+        TargetSelection();
+
+        while (currentTarget == null)
+        {
+            yield return null;
+        }
+        ClearActionButtonsPanel();
+
+        int prevHP = currentTarget.currentHP;
+        currentTarget.Heal(currentUnit.restoration);
+        int newHP = currentUnit.currentHP;
+        DisplayMessage($"{currentUnit.name} healed {currentTarget.name} for {newHP-prevHP}.");
+        while (messageBoxNeedsUserConfirmation)
+        {
+            yield return null;
+        }
+
+        currentUnitTakingAction = false;
+    }
+
+    public void OnDefensiveStanceButton()
+    {
+        StartCoroutine(OnDefensiveStance());
+    }
+
+    public IEnumerator OnDefensiveStance()
+    {
+        yield return null;
+        ClearActionButtonsPanel();
+        if (currentUnit.defensiveStance > 0)
+        {
+            DisplayMessage($"{currentUnit.name} maintained a defensive stance.");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
+            currentUnit.defensiveStance = 2;
+        }
+        else
+        {
+            DisplayMessage($"{currentUnit.name} took a defensive stance.");
+            while (messageBoxNeedsUserConfirmation)
+            {
+                yield return null;
+            }
+            currentUnit.defensiveStance = 2;
+        }
+
+        currentUnitTakingAction = false;
+    }
+
+    public void OnStabilizeActionButton()
+    {
+        StartCoroutine(OnStabilizeAction());
+    }
+
+    public IEnumerator OnStabilizeAction()
+    {
+        //Populate with the ActionsAndNames that can be stabilized.
+        //ActionToStabilizeSelection();
+        while (actionAndNameToStabilize == (null, null))
+        {
+            yield return null;
+        }
+        foreach (Transform child in actionButtonsPanel.transform)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+        if (actionAndNameToStabilize != (null, null) && !currentUnit.stableActionsAndNames.Contains(actionAndNameToStabilize))
+        {
+            //TODO: Check if the class trying to stabilize is allowed to stabilize that action, if not fail out and let the player know that a class can only stabilize it's own actions.
+
+            currentUnit.stableActionsAndNames.Add(actionAndNameToStabilize);
+            DisplayMessage($"{currentUnit.name} stabilized the ({actionAndNameToStabilize.Item2}) action!");
+        }
+        else
+        {
+            DisplayMessage($"{currentUnit.name} has already stabilized the ({actionAndNameToStabilize.Item2}) action.");
+        }
+    }
+
+    public void OnQuitGameButton()
+    {
+        #if UNITY_STANDALONE
+            Application.Quit();
+        #endif
+        #if UNITY_EDITOR
+            EditorApplication.ExitPlaymode();
+        #endif
+    }
+
+    public void OnPauseToggleButton()
+    {
+        if (pausedGame)
+        {
+            pausedGame = false;
+            pauseUI.gameObject.SetActive(false);
+        }
+        else
+        {
+            pausedGame = true;
+            pauseUI.gameObject.SetActive(true);
+        }
+    }
+
+    private void TargetSelection()
+    {
+        foreach (Transform child in actionButtonsPanel.transform)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+        //TODO: Cleanup the following two for loops, since we don't really the same code with different names for each list.        
+        {
+            GameObject go = Instantiate(actionGroupLabelPrefab);
+            go.name = "Selectable Heroes Label";
+            go.GetComponent<TextMeshProUGUI>().text = "Selectable Heroes";
+            go.transform.SetParent(actionButtonsPanel.transform);
+        }
+        for (int i = 0; i < heroesCurrentBattleList.Count; i++)
+        {
+            Unit hero = heroesCurrentBattleList[i];
+            if (!hero.IsDead())
+            {
+                GameObject go = Instantiate(actionButtonPrefab);
+                go.GetComponent<Button>().onClick.AddListener(() => currentTarget = hero);
+                go.name = hero.name;
+                go.GetComponentInChildren<TextMeshProUGUI>().text = hero.name;
+                go.transform.SetParent(actionButtonsPanel.transform);
+            }
+        }
+        {
+            GameObject go = Instantiate(actionGroupLabelPrefab);
+            go.name = "Selectable Enemies Label";
+            go.GetComponent<TextMeshProUGUI>().text = "Selectable Enemies";
+            go.transform.SetParent(actionButtonsPanel.transform);
+        }
+        for(int i = 0; i < enemiesCurrentBattleList.Count; i++)
+        {
+            Unit enemy = enemiesCurrentBattleList[i];
+            if (!enemy.IsDead())
+            {
+                GameObject go = Instantiate(actionButtonPrefab);
+                go.GetComponent<Button>().onClick.AddListener(() => currentTarget = enemy);
+                go.name = enemy.name;
+                go.GetComponentInChildren<TextMeshProUGUI>().text = enemy.name;
+                go.transform.SetParent(actionButtonsPanel.transform);
+            }
+        }
+    }
+
+    private void ClearActionButtonsPanel()
+    {
+        foreach (Transform child in actionButtonsPanel.transform)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
     }
 
 }
