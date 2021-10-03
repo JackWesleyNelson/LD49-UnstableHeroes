@@ -54,10 +54,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\PackedVerticalLayoutGroup.cs" />
-    <Compile Include="Assets\Scripts\PackedHorizontalLayoutGroup.cs" />
-    <Compile Include="Assets\Scripts\GameFlowController.cs" />
     <Compile Include="Assets\Scripts\Unit.cs" />
-    <Compile Include="Assets\ShowLabelOnHover.cs" />
+    <Compile Include="Assets\Scripts\ShowLabelOnHover.cs" />
+    <Compile Include="Assets\Scripts\GameFlowController.cs" />
+    <Compile Include="Assets\Scripts\PackedHorizontalLayoutGroup.cs" />
+    <Compile Include="Assets\Scripts\PlayMusic.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

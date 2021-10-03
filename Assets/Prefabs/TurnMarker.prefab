@@ -522,6 +522,7 @@ GameObject:
   - component: {fileID: 1164561165924976225}
   - component: {fileID: 152202965529775323}
   - component: {fileID: 3786344046752996455}
+  - component: {fileID: 910562571402955343}
   m_Layer: 5
   m_Name: TurnMarker
   m_TagString: Untagged
@@ -635,6 +636,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &910562571402955343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4888985628641836428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HorizontalFit: 0
+  m_VerticalFit: 0
 --- !u!1 &7459550064049578621
 GameObject:
   m_ObjectHideFlags: 0
