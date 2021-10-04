@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -311,12 +312,8 @@ public class GameFlowController : MonoBehaviour
     {
         if(turnOrderPanel != null)
         {
-            foreach(Transform child in turnOrderPanel.transform)
-            {
-                GameObject go = child.gameObject;
-                go.SetActive(false);
-                Destroy(go);
-            }
+            ClearPanelChildren(turnOrderPanel);
+
             List<Unit> displayOrder = new List<Unit>();
             List<Unit> heroesTurnTaken = new List<Unit>();
             List<Unit> heroesTurnNotTaken = new List<Unit>();
@@ -455,11 +452,7 @@ public class GameFlowController : MonoBehaviour
                 }
                 currentUnitTakingAction = true;
                 //Set the actions for this round.
-                foreach(Transform child in actionButtonsPanel.transform)
-                {
-                    child.gameObject.SetActive(false);
-                    Destroy(child.gameObject);
-                }
+                ClearPanelChildren(actionButtonsPanel);
                 {
                     GameObject go = Instantiate(actionGroupLabelPrefab);
                     go.name = $"{currentUnit.name}'s Turn Label";
@@ -886,7 +879,7 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnRest()
     {
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
 
         int prevHP = currentUnit.currentHP;
         currentUnit.Rest();
@@ -921,7 +914,7 @@ public class GameFlowController : MonoBehaviour
         {
             yield return null;
         }
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
 
         int prevHealth = currentTarget.currentHP;
         bool fatal = currentTarget.TakeDamage(currentUnit.damage);
@@ -965,8 +958,7 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnHide()
     {
-
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Hide();
         int newThreat = currentUnit.currentThreatLevel;
@@ -1007,7 +999,7 @@ public class GameFlowController : MonoBehaviour
         {
             yield return null;
         }
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
         bool lowestThreat = true;
         if (heroesCurrentBattleList.Contains(currentUnit))
         {
@@ -1098,7 +1090,7 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnIntimidate()
     {
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Intimidate();
         int newThreat = currentUnit.currentThreatLevel;
@@ -1140,7 +1132,7 @@ public class GameFlowController : MonoBehaviour
         {
             yield return null;
         }
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
 
         int prevHP = currentTarget.currentHP;
         currentTarget.Heal(currentUnit.restoration);
@@ -1177,11 +1169,8 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnHealingCircle()
     {
-        foreach (Transform child in actionButtonsPanel.transform)
-        {
-            child.gameObject.SetActive(false);
-            Destroy(child.gameObject);
-        }
+        ClearPanelChildren(actionButtonsPanel);
+
         DisplayBattleMessage($"{currentUnit.name} begins drawing a symbols on the ground.");
         while (messageBoxNeedsUserConfirmation)
         {
@@ -1230,7 +1219,7 @@ public class GameFlowController : MonoBehaviour
 
     public IEnumerator OnDefensiveStance()
     {
-        ClearActionButtonsPanel();
+        ClearPanelChildren(actionButtonsPanel);
         if (currentUnit.defensiveStance > 0)
         {
             DisplayBattleMessage($"{currentUnit.name} maintained a defensive stance.");
@@ -1297,58 +1286,43 @@ public class GameFlowController : MonoBehaviour
 
     private void TargetSelection()
     {
-        if(currentTarget != null) { return; }
-        foreach (Transform child in actionButtonsPanel.transform)
-        {
-            child.gameObject.SetActive(false);
-            Destroy(child.gameObject);
-        }
-        //TODO: Cleanup the following two for loops, since we don't really the same code with different names for each list.        
-        {
-            GameObject go = Instantiate(actionGroupLabelPrefab);
-            go.name = "Selectable Heroes Label";
-            go.GetComponent<TextMeshProUGUI>().text = "Selectable Heroes";
-            go.transform.SetParent(actionButtonsPanel.transform);
-        }
-        for (int i = 0; i < heroesCurrentBattleList.Count; i++)
-        {
-            Unit hero = heroesCurrentBattleList[i];
-            if (!hero.IsDead())
-            {
-                GameObject go = Instantiate(actionButtonPrefab);
-                go.GetComponent<Button>().onClick.AddListener(() => currentTarget = hero);
-                go.name = hero.name;
-                go.GetComponentInChildren<TextMeshProUGUI>().text = hero.name;
-                go.transform.SetParent(actionButtonsPanel.transform);
-            }
-        }
-        {
-            GameObject go = Instantiate(actionGroupLabelPrefab);
-            go.name = "Selectable Enemies Label";
-            go.GetComponent<TextMeshProUGUI>().text = "Selectable Enemies";
-            go.transform.SetParent(actionButtonsPanel.transform);
-        }
-        for(int i = 0; i < enemiesCurrentBattleList.Count; i++)
-        {
-            Unit enemy = enemiesCurrentBattleList[i];
-            if (!enemy.IsDead())
-            {
-                GameObject go = Instantiate(actionButtonPrefab);
-                go.GetComponent<Button>().onClick.AddListener(() => currentTarget = enemy);
-                go.name = enemy.name;
-                go.GetComponentInChildren<TextMeshProUGUI>().text = enemy.name;
-                go.transform.SetParent(actionButtonsPanel.transform);
-            }
-        }
+        if(currentTarget != null) { return; } //Don't populate the panel if we already have a target, like when the AI enemies are going to have a target.
+        ClearPanelChildren(actionButtonsPanel);
+        AddLabelToPanel(actionButtonsPanel, actionGroupLabelPrefab, "Selectable Heroes");
+        AddSelectableUnitsToActionPanel(heroesCurrentBattleList);
+        AddLabelToPanel(actionButtonsPanel, actionGroupLabelPrefab, "Selectable Enemies");
+        AddSelectableUnitsToActionPanel(enemiesCurrentBattleList);
     }
 
-    private void ClearActionButtonsPanel()
+    private static void AddLabelToPanel(GameObject panel, GameObject labelPrefab, String labelText)
     {
-        foreach (Transform child in actionButtonsPanel.transform)
+        GameObject go = Instantiate(labelPrefab);
+        go.name = $"Label: {labelText}";
+        go.GetComponent<TextMeshProUGUI>().text = labelText;
+        go.transform.SetParent(panel.transform);
+    }
+
+    private static void AddButtonToPanel(GameObject panel, GameObject buttonPrefab, String buttonText, UnityAction buttonCallback){
+        GameObject go = Instantiate(buttonPrefab);
+        go.name = $"Button: {buttonText}";
+        go.GetComponent<Button>().onClick.AddListener(buttonCallback);
+        go.GetComponentInChildren<TextMeshProUGUI>().text = buttonText;
+        go.transform.SetParent(panel.transform);
+    }
+    private static void ClearPanelChildren(GameObject panel)
+    {
+        foreach (Transform child in panel.transform)
         {
             child.gameObject.SetActive(false);
             Destroy(child.gameObject);
         }
     }
 
+    private void AddSelectableUnitsToActionPanel(List<Unit> units){
+        foreach(Unit unit in units){
+            if(!unit.IsDead()){
+                AddButtonToPanel(actionButtonsPanel, actionButtonPrefab, unit.name, () => currentTarget = unit);
+            }
+        }
+    }
 }
