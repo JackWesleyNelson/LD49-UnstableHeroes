@@ -101,9 +101,7 @@ public class GameFlowController : MonoBehaviour
         //Battle 2
         new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5), new Unit("Goblin", 3, 1, 1, 5) },
         //Battle 3
-        new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Ogre", 4, 3, 1, 20) },
-        //Battle 4
-        new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5) }
+        new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Ogre", 4, 3, 1, 20) }
     };
     private List<Unit> enemiesCurrentBattleList = new List<Unit>(); 
 
