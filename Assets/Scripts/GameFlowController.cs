@@ -57,7 +57,7 @@ public class GameFlowController : MonoBehaviour {
             "A Warrior, Rogue and Cleric travel the lands. In search of what, they are not sure.",
             "It's been a while since their last expedition. The can still swing their instruments of war, but beyond that they aren't sure how to work as a group anymore.",
             "They struggle to remember their true actions. But only by using them will they create a more stable party.",
-            "As they walk through the forest, the stumble across an enemy."
+            "As they walk through the forest, they stumble across an enemy."
             },
         //Before Battle 2
         new List<string>{
@@ -144,7 +144,6 @@ public class GameFlowController : MonoBehaviour {
             }
         }
 
-
         if (Input.GetKeyDown(KeyCode.Escape)) {
             OnPauseToggleButton();
         }
@@ -178,10 +177,6 @@ public class GameFlowController : MonoBehaviour {
     }
 
     void TitleInput() {
-        //if (AnyKeyDownMatched(enterKey))
-        //{
-
-        //}
     }
 
     public void OnNewGameButton() {
@@ -223,10 +218,7 @@ public class GameFlowController : MonoBehaviour {
     private IEnumerator BattleStart() {
         if (currentBattleIndex < storyTextbeforeEachBattleList.Count) {
             foreach (String storyBite in storyTextbeforeEachBattleList[currentBattleIndex]) {
-                DisplayGeneralMessage(storyBite);
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, storyBite);
             }
         }
 
@@ -358,17 +350,11 @@ public class GameFlowController : MonoBehaviour {
             }
             //Take their turn
             if (currentUnit != null) {
-                DisplayBattleMessage(currentUnit.name + " is the acting hero!");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, currentUnit.name + " is the acting hero!");
                 if (currentUnit.defensiveStance > 0) {
                     currentUnit.defensiveStance--;
                     if (currentUnit.defensiveStance == 0) {
-                        DisplayBattleMessage($"{currentUnit.name} is no longer in a defensive stance.");
-                        while (messageBoxNeedsUserConfirmation) {
-                            yield return null;
-                        }
+                        yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, $"{currentUnit.name} is no longer in a defensive stance.");
                     }
                 }
                 currentUnitTakingAction = true;
@@ -506,25 +492,16 @@ public class GameFlowController : MonoBehaviour {
 
             //Take their turn
             if (currentUnit != null) {
-                DisplayBattleMessage($"The enemy {currentUnit.name} is about to act!");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"The enemy {currentUnit.name} is about to act!");
                 if (currentUnit.defensiveStance > 0) {
                     currentUnit.defensiveStance--;
                     if (currentUnit.defensiveStance == 0) {
-                        DisplayBattleMessage($"{currentUnit.name} is no longer in a defensive stance.");
-                        while (messageBoxNeedsUserConfirmation) {
-                            yield return null;
-                        }
+                        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} is no longer in a defensive stance.");
                     }
                 }
                 currentUnitTakingAction = true;
                 if (turn % 4 == 0 && currentUnit.name == "Ogre") {
-                    DisplayBattleMessage("The ogre lets loose a sweeping attack!");
-                    while (messageBoxNeedsUserConfirmation) {
-                        yield return null;
-                    }
+                    yield return DisplayMessageAwaitComfirmation(messageBattlePanel, "The ogre lets loose a sweeping attack!");
                     foreach (Unit hero in heroesCurrentBattleList) {
                         currentUnitTakingAction = true;
                         currentTarget = hero;
@@ -534,10 +511,7 @@ public class GameFlowController : MonoBehaviour {
                         }
                     }
                 } else if (turn % 3 == 0 && currentUnit.name == "Ogre") {
-                    DisplayBattleMessage("The Ogre is winding up an attack!");
-                    while (messageBoxNeedsUserConfirmation) {
-                        yield return null;
-                    }
+                    yield return DisplayMessageAwaitComfirmation(messageBattlePanel, "The Ogre is winding up an attack!");
                     currentUnitTakingAction = false;
                 } else {
                     float r = UnityEngine.Random.Range(0f, 1f);
@@ -600,10 +574,7 @@ public class GameFlowController : MonoBehaviour {
             //Check a Dictionary for any story text
 
             //There are more battles
-            DisplayGeneralMessage("The battle has been won, but the journey is not over.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, "The battle has been won, but the journey is not over.");
             gameState = GameState.BATTLE_START;
             StartCoroutine(BattleStart());
         } else {
@@ -614,25 +585,13 @@ public class GameFlowController : MonoBehaviour {
                     break;
                 }
             }
-            DisplayGeneralMessage("The goblin encampment has been cleared, and the heroes have prevailed!");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, "The goblin encampment has been cleared, and the heroes have prevailed!");
             if (allSkillsStabilized) {
-                DisplayGeneralMessage("The heroes still may not know what comes next, but through these encounters they have finally remembered what it's like to have a stable party.");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, "The heroes still may not know what comes next, but through these encounters they have finally remembered what it's like to have a stable party.");
             } else {
-                DisplayGeneralMessage("The heroes may have made it through this encounter, but can't help the nagging feeling something about the party still isn't quite right.");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, "The heroes may have made it through this encounter, but can't help the nagging feeling something about the party still isn't quite right.");
             }
-            DisplayGeneralMessage("Congratulations, and thanks for playing!");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, "Congratulations, and thanks for playing!");
             OnQuitGameButton();
         }
     }
@@ -653,19 +612,14 @@ public class GameFlowController : MonoBehaviour {
 
     #region BattleLost
     private IEnumerator BattleLost() {
-        DisplayGeneralMessage("Struggle as you might, you could not prevail. Perhaps the next group of adventurers will be a bit more stable.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageGeneralPanel, "Struggle as you might, you could not prevail. Perhaps the next group of adventurers will be a bit more stable.");
         //Reset the list and start over?
         heroesCurrentBattleList.Clear();
         foreach (Unit hero in heroesMasterList) {
             heroesCurrentBattleList.Add(new Unit(hero));
         }
         gameState = GameState.TITLE;
-        if (gameState == GameState.TITLE) {
             StartCoroutine(Title());
-        }
 
     }
 
@@ -684,18 +638,6 @@ public class GameFlowController : MonoBehaviour {
     }
     #endregion    
 
-    private void DisplayBattleMessage(String message) {
-        messageBattlePanel.gameObject.SetActive(true);
-        messageBattlePanel.transform.GetComponentInChildren<TextMeshProUGUI>().text = message;
-        messageBoxNeedsUserConfirmation = true;
-    }
-
-    private void DisplayGeneralMessage(String message) {
-        messageGeneralPanel.gameObject.SetActive(true);
-        messageGeneralPanel.transform.GetComponentInChildren<TextMeshProUGUI>().text = message;
-        messageBoxNeedsUserConfirmation = true;
-    }
-
     private void StopDisplayingMessage() {
         if (messageBoxNeedsUserConfirmation) {
             messageBoxNeedsUserConfirmation = false;
@@ -704,6 +646,7 @@ public class GameFlowController : MonoBehaviour {
         }
     }
 
+    #region Actions
     public void OnRestButton() => StartCoroutine(OnRest());
 
     public IEnumerator OnRest() {
@@ -712,18 +655,11 @@ public class GameFlowController : MonoBehaviour {
         int prevHP = currentUnit.currentHP;
         currentUnit.Rest();
         int newHP = currentUnit.currentHP;
-        DisplayBattleMessage($"{currentUnit.name} rested, restoring {newHP - prevHP} HP.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} rested, restoring {newHP - prevHP} HP.");
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.ModifyThreat(-1);
         int newThreat = currentUnit.currentThreatLevel;
-        DisplayBattleMessage($"{currentUnit.name} reduced threat by {newThreat - prevThreat}.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
-
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} reduced threat by {newThreat - prevThreat}.");
         currentUnitTakingAction = false;
     }
 
@@ -741,26 +677,17 @@ public class GameFlowController : MonoBehaviour {
         bool fatal = currentTarget.TakeDamage(currentUnit.damage);
         int newHealth = currentTarget.currentHP;
 
-        DisplayBattleMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth - newHealth} damage.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} attacked {currentTarget.name} for {prevHealth - newHealth} damage.");
         if (fatal) {
             int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(3);
             int newThreat = currentUnit.currentThreatLevel;
-            DisplayBattleMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat - prevThreat}.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat - prevThreat}.");
         } else {
             int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(1);
             int newThreat = currentUnit.currentThreatLevel;
-            DisplayBattleMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
         }
 
         currentUnitTakingAction = false;
@@ -773,10 +700,7 @@ public class GameFlowController : MonoBehaviour {
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Hide();
         int newThreat = currentUnit.currentThreatLevel;
-        DisplayBattleMessage($"{currentUnit.name} hid, reducing threat by {prevThreat - newThreat}.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} hid, reducing threat by {prevThreat - newThreat}.");        
         yield return AttemptStabilizeAction("Rogue", (OnHideButton, "Hide"));
         currentUnitTakingAction = false;
     }
@@ -811,30 +735,18 @@ public class GameFlowController : MonoBehaviour {
             int prevHealth = currentTarget.currentHP;
             bool fatal = currentTarget.TakeDamage(currentUnit.damage * 3);
             int newHealth = currentTarget.currentHP;
-            DisplayBattleMessage($"{currentUnit.name} snuck up on {currentTarget.name}, dealing {prevHealth - newHealth} damage!");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} snuck up on {currentTarget.name}, dealing {prevHealth - newHealth} damage!");
             if (fatal) {
-                DisplayBattleMessage($"{currentTarget.name} has taken fatal damage, but no one noticed. {currentUnit.name}'s current threat remains {currentUnit.currentThreatLevel}.");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentTarget.name} has taken fatal damage, but no one noticed. {currentUnit.name}'s current threat remains {currentUnit.currentThreatLevel}.");
             } else {
                 int prevThreat = currentUnit.currentThreatLevel;
                 currentUnit.ModifyThreat(2);
                 int newThreat = currentUnit.currentThreatLevel;
-                DisplayBattleMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
-                while (messageBoxNeedsUserConfirmation) {
-                    yield return null;
-                }
+                yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
             }
             yield return AttemptStabilizeAction("Rogue", (OnSneakAttackButton, "Sneak Attack"));
         } else {
-            DisplayBattleMessage($"{currentUnit.name} attempted to sneak attack, but {currentTarget.name} noticed because their threat was too high.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} attempted to sneak attack, but {currentTarget.name} noticed because their threat was too high.");
         }
 
         currentUnitTakingAction = false;
@@ -847,10 +759,7 @@ public class GameFlowController : MonoBehaviour {
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Intimidate();
         int newThreat = currentUnit.currentThreatLevel;
-        DisplayBattleMessage($"{currentUnit.name} intimidated the enemy, increasing threat by {newThreat - prevThreat}.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} intimidated the enemy, increasing threat by {newThreat - prevThreat}.");
         yield return AttemptStabilizeAction("Warrior", (OnIntimidateButton, "Intimidate"));
         currentUnitTakingAction = false;
     }
@@ -868,10 +777,7 @@ public class GameFlowController : MonoBehaviour {
         int prevHP = currentTarget.currentHP;
         currentTarget.Heal(currentUnit.restoration);
         int newHP = currentUnit.currentHP;
-        DisplayBattleMessage($"{currentUnit.name} healed {currentTarget.name} for {newHP - prevHP}.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} healed {currentTarget.name} for {newHP - prevHP}.");
         yield return AttemptStabilizeAction("Cleric", (OnHealButton, "Heal"));
         currentUnitTakingAction = false;
     }
@@ -880,23 +786,13 @@ public class GameFlowController : MonoBehaviour {
 
     public IEnumerator OnHealingCircle() {
         ClearPanelChildren(actionButtonsPanel);
-
-        DisplayBattleMessage($"{currentUnit.name} begins drawing a symbols on the ground.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
-        DisplayBattleMessage($"Light pierces down radiatng in a circle near the symbols.");
-        while (messageBoxNeedsUserConfirmation) {
-            yield return null;
-        }
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} begins drawing a symbols on the ground.");
+        yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"Light pierces down radiating in a circle near the symbols.");
         foreach (Unit hero in heroesCurrentBattleList) {
             int prevHP = hero.currentHP;
             hero.Heal(currentUnit.restoration / 3);
             int newHP = hero.currentHP;
-            DisplayBattleMessage($"{currentUnit.name} healed {hero.name} for {newHP - prevHP}.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} healed {hero.name} for {newHP - prevHP}.");
         }
         yield return AttemptStabilizeAction("Cleric", (OnHealingCircleButton, "Healing Circle"));
         currentUnitTakingAction = false;
@@ -907,25 +803,20 @@ public class GameFlowController : MonoBehaviour {
     public IEnumerator OnDefensiveStance() {
         ClearPanelChildren(actionButtonsPanel);
         if (currentUnit.defensiveStance > 0) {
-            DisplayBattleMessage($"{currentUnit.name} maintained a defensive stance.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} maintained a defensive stance.");
             currentUnit.defensiveStance = 2;
         } else {
-            DisplayBattleMessage($"{currentUnit.name} took a defensive stance.");
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"{currentUnit.name} took a defensive stance.");
             currentUnit.defensiveStance = 2;
         }
         yield return AttemptStabilizeAction("Warrior", (OnDefensiveStanceButton, "Defensive Stance"));
         currentUnitTakingAction = false;
     }
+    #endregion
 
     private IEnumerator AttemptStabilizeAction(String unitNameThatCanStabilizeAction, (Action, String) actionAndNameToStabilize) {
         if (currentUnit.name == unitNameThatCanStabilizeAction && !currentUnit.stableActionsAndNames.Contains(actionAndNameToStabilize)) {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Defensive Stance Stabilized!");
+            yield return DisplayMessageAwaitComfirmation(messageBattlePanel, $"The {currentUnit.name} is beginning to remember it's calling. Defensive Stance Stabilized!");            
             currentUnit.stableActionsAndNames.Add(actionAndNameToStabilize);
             foreach (Unit hero in heroesMasterList) {
                 if (hero.name == "Warrior") {
@@ -933,9 +824,15 @@ public class GameFlowController : MonoBehaviour {
                 }
             }
             buttonActionsAndNames.Remove(actionAndNameToStabilize);
-            while (messageBoxNeedsUserConfirmation) {
-                yield return null;
-            }
+        }
+    }
+
+    private IEnumerator DisplayMessageAwaitComfirmation(GameObject messageBoxPanel, String message){
+        messageBoxPanel.gameObject.SetActive(true);
+        messageBoxPanel.transform.GetComponentInChildren<TextMeshProUGUI>().text = message;
+        messageBoxNeedsUserConfirmation = true;
+        while (messageBoxNeedsUserConfirmation) {
+            yield return null;
         }
     }
 
@@ -995,6 +892,4 @@ public class GameFlowController : MonoBehaviour {
             Destroy(child.gameObject);
         }
     }
-
-
 }
