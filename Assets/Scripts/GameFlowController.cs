@@ -10,19 +10,18 @@ using UnityEngine.UI;
 
 public enum GameState { TITLE, CHARACTER_CREATION, BATTLE_START, PLAYER_TURN, ENEMY_TURN, BATTLE_WON, BATTLE_LOST }
 
-public class GameFlowController : MonoBehaviour
-{
+public class GameFlowController : MonoBehaviour {
     GameState gameState = GameState.TITLE;
     private bool titleWaitingOnInput = true;
     private bool messageBoxNeedsUserConfirmation = false;
     private bool currentUnitTakingAction = false;
     private bool pausedGame = false;
-   
+
     private Unit currentUnit = null;
     private Unit currentTarget = null;
     private (Action, String) actionAndNameToStabilize = (null, null);
 
-    private readonly List<KeyCode> enterKey = new List<KeyCode> { KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space,  KeyCode.Mouse0};
+    private readonly List<KeyCode> enterKey = new List<KeyCode> { KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space, KeyCode.Mouse0 };
     private readonly List<KeyCode> upKey = new List<KeyCode> { KeyCode.UpArrow, KeyCode.W };
     private readonly List<KeyCode> downKey = new List<KeyCode> { KeyCode.DownArrow, KeyCode.S };
     private readonly List<KeyCode> leftKey = new List<KeyCode> { KeyCode.LeftArrow, KeyCode.A };
@@ -52,7 +51,7 @@ public class GameFlowController : MonoBehaviour
     [SerializeField]
     private GameObject turnOrderPanel = null;
 
-    [SerializeField] 
+    [SerializeField]
     private GameObject messageBattlePanel = null;
     [SerializeField]
     private GameObject messageGeneralPanel = null;
@@ -95,7 +94,7 @@ public class GameFlowController : MonoBehaviour
             },
     };
 
-    private List<List<Unit>> enemiesInEachBattleMasterList = new List<List<Unit>> 
+    private List<List<Unit>> enemiesInEachBattleMasterList = new List<List<Unit>>
     {
         //Battle 1
         new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5) },
@@ -104,11 +103,10 @@ public class GameFlowController : MonoBehaviour
         //Battle 3
         new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Ogre", 4, 3, 1, 20) }
     };
-    private List<Unit> enemiesCurrentBattleList = new List<Unit>(); 
+    private List<Unit> enemiesCurrentBattleList = new List<Unit>();
 
     // Start is called before the first frame update
-    void Start()
-    {
+    void Start() {
         buttonActionsAndNames.AddRange(new List<(Action, String)>{(OnDefensiveStanceButton, "Defensive Stance"),
                                                                 (OnIntimidateButton, "Intimidate"),
                                                                 (OnHideButton, "Hide"),
@@ -116,51 +114,40 @@ public class GameFlowController : MonoBehaviour
                                                                 (OnHealButton, "Heal"),
                                                                 (OnHealingCircleButton, "Healing Circle")});
 
-        foreach(Unit hero in heroesMasterList)
-        {
+        foreach (Unit hero in heroesMasterList) {
             hero.stableActionsAndNames.Add((OnAttackButton, "Attack"));
             hero.stableActionsAndNames.Add((OnRestButton, "Rest"));
         }
 
         heroesCurrentBattleList.Clear();
-        foreach (Unit hero in heroesMasterList)
-        {
+        foreach (Unit hero in heroesMasterList) {
             heroesCurrentBattleList.Add(new Unit(hero));
         }
 
-        if (gameState == GameState.TITLE)
-        {
+        if (gameState == GameState.TITLE) {
             StartCoroutine(Title());
         }
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        if (!pausedGame)
-        {
-            switch (gameState)
-            {
+    void Update() {
+        if (!pausedGame) {
+            switch (gameState) {
                 case GameState.TITLE:
                     TitleInput();
                     break;
-
                 case GameState.CHARACTER_CREATION:
                     CharacterCreationInput();
                     break;
-
                 case GameState.BATTLE_START:
                     BattleStartInput();
                     break;
-
                 case GameState.PLAYER_TURN:
                     PlayerTurnInput();
                     break;
-
                 case GameState.ENEMY_TURN:
                     EnemyTurnInput();
                     break;
-
                 case GameState.BATTLE_WON:
                     BattleWonInput();
                     break;
@@ -168,23 +155,19 @@ public class GameFlowController : MonoBehaviour
                     BattleLostInput();
                     break;
             }
-            if (AnyKeyDownMatched(enterKey))
-            {
+            if (AnyKeyDownMatched(enterKey)) {
                 StopDisplayingMessage();
             }
         }
-        
 
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
+
+        if (Input.GetKeyDown(KeyCode.Escape)) {
             OnPauseToggleButton();
         }
     }
 
-    bool AnyKeyDownMatched(List<KeyCode> keyCodesToCheck)
-    {
-        foreach (KeyCode keycode in keyCodesToCheck)
-        {
+    bool AnyKeyDownMatched(List<KeyCode> keyCodesToCheck) {
+        foreach (KeyCode keycode in keyCodesToCheck) {
             if (Input.GetKeyDown(keycode)) { return true; }
         }
         return false;
@@ -192,13 +175,11 @@ public class GameFlowController : MonoBehaviour
 
     #region Title
 
-    IEnumerator Title()
-    {
+    IEnumerator Title() {
         //Enable Title UI
         titleUI.SetActive(true);
 
-        while (titleWaitingOnInput)
-        {
+        while (titleWaitingOnInput) {
             yield return null;
         }
         titleWaitingOnInput = true;
@@ -212,16 +193,14 @@ public class GameFlowController : MonoBehaviour
         StartCoroutine(CharacterCreation());
     }
 
-    void TitleInput()
-    {
+    void TitleInput() {
         //if (AnyKeyDownMatched(enterKey))
         //{
 
         //}
     }
 
-    public void OnNewGameButton()
-    {
+    public void OnNewGameButton() {
         titleWaitingOnInput = false;
     }
 
@@ -229,8 +208,7 @@ public class GameFlowController : MonoBehaviour
 
     #region CharacterCreation
 
-    private IEnumerator CharacterCreation()
-    {
+    private IEnumerator CharacterCreation() {
         //characterCreationUI.SetActive(true);
 
         //while (!characterCreationConfirmed)
@@ -247,12 +225,10 @@ public class GameFlowController : MonoBehaviour
         yield return null;
     }
 
-    private void CharacterCreationInput()
-    {
+    private void CharacterCreationInput() {
     }
 
-    public void OnConfirmCreationButton()
-    {
+    public void OnConfirmCreationButton() {
 
     }
 
@@ -260,22 +236,17 @@ public class GameFlowController : MonoBehaviour
 
     #region BattleStart
 
-    private IEnumerator BattleStart()
-    {
-        if(currentBattleIndex < storyTextbeforeEachBattleList.Count)
-        {
-            foreach (String storyBite in storyTextbeforeEachBattleList[currentBattleIndex])
-            {
+    private IEnumerator BattleStart() {
+        if (currentBattleIndex < storyTextbeforeEachBattleList.Count) {
+            foreach (String storyBite in storyTextbeforeEachBattleList[currentBattleIndex]) {
                 DisplayGeneralMessage(storyBite);
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
             }
         }
 
-        foreach(Unit hero in heroesCurrentBattleList)
-        {
+        foreach (Unit hero in heroesCurrentBattleList) {
             hero.currentThreatLevel = 5;
             hero.defensiveStance = 0;
             hero.turnTaken = false;
@@ -283,8 +254,7 @@ public class GameFlowController : MonoBehaviour
 
         //Initialize the current battles units with clones from the master.
         enemiesCurrentBattleList.Clear();
-        foreach(Unit enemy in enemiesInEachBattleMasterList[currentBattleIndex])
-        {
+        foreach (Unit enemy in enemiesInEachBattleMasterList[currentBattleIndex]) {
             enemiesCurrentBattleList.Add(new Unit(enemy));
         }
 
@@ -293,9 +263,8 @@ public class GameFlowController : MonoBehaviour
         gameState = GameState.PLAYER_TURN;
         turn = 1;
         StartCoroutine(PlayerTurn());
-        while (true){
-            if(gameState == GameState.BATTLE_LOST || gameState == GameState.BATTLE_WON) 
-            {
+        while (true) {
+            if (gameState == GameState.BATTLE_LOST || gameState == GameState.BATTLE_WON) {
                 battleStartUI.SetActive(false);
                 break;
             }
@@ -303,15 +272,12 @@ public class GameFlowController : MonoBehaviour
         }
     }
 
-    private void BattleStartInput()
-    {
+    private void BattleStartInput() {
 
     }
 
-    private void UpdateTurnOrderPanel()
-    {
-        if(turnOrderPanel != null)
-        {
+    private void UpdateTurnOrderPanel() {
+        if (turnOrderPanel != null) {
             ClearPanelChildren(turnOrderPanel);
 
             List<Unit> displayOrder = new List<Unit>();
@@ -321,30 +287,20 @@ public class GameFlowController : MonoBehaviour
             List<Unit> enemiesTurnNotTaken = new List<Unit>();
 
             //Fill the lists to see whose taken their turns (or ignore them if they're dead).
-            foreach(Unit hero in heroesCurrentBattleList)
-            {
-                if (!hero.IsDead())
-                {
-                    if (hero.turnTaken)
-                    {
+            foreach (Unit hero in heroesCurrentBattleList) {
+                if (!hero.IsDead()) {
+                    if (hero.turnTaken) {
                         heroesTurnTaken.Add(hero);
-                    }
-                    else
-                    {
+                    } else {
                         heroesTurnNotTaken.Add(hero);
                     }
                 }
             }
-            foreach (Unit enemy in enemiesCurrentBattleList)
-            {
-                if (!enemy.IsDead())
-                {
-                    if (enemy.turnTaken)
-                    {
+            foreach (Unit enemy in enemiesCurrentBattleList) {
+                if (!enemy.IsDead()) {
+                    if (enemy.turnTaken) {
                         enemiesTurnTaken.Add(enemy);
-                    }
-                    else
-                    {
+                    } else {
                         enemiesTurnNotTaken.Add(enemy);
                     }
                 }
@@ -352,14 +308,11 @@ public class GameFlowController : MonoBehaviour
             }
             //Fill in the order that they'll be taking their turns. For now, it's always in order, and alternating teams. 
             //TODO: Think about adding support for non-linear turn order.
-            if(gameState == GameState.ENEMY_TURN)
-            {
+            if (gameState == GameState.ENEMY_TURN) {
                 displayOrder.AddRange(enemiesTurnNotTaken);
                 displayOrder.AddRange(heroesTurnNotTaken);
                 displayOrder.AddRange(enemiesTurnTaken);
-            }
-            else
-            {
+            } else {
                 displayOrder.AddRange(heroesTurnNotTaken);
                 displayOrder.AddRange(enemiesTurnNotTaken);
                 displayOrder.AddRange(heroesTurnTaken);
@@ -369,42 +322,35 @@ public class GameFlowController : MonoBehaviour
 
             int currentCount = 0;
             int maxCount = 6;
-            foreach (Unit unit in displayOrder)
-            {
+            foreach (Unit unit in displayOrder) {
                 GameObject go = Instantiate(turnMarkerPrefab);
-                go.name = unit.name;    
-                foreach(Transform child in go.transform)
-                {
-                    if(child.gameObject.name == "Name")
-                    {
+                go.name = unit.name;
+                foreach (Transform child in go.transform) {
+                    if (child.gameObject.name == "Name") {
                         child.GetComponent<TextMeshProUGUI>().SetText(unit.name);
                     }
-                    if (child.gameObject.name == "Threat")
-                    {
+                    if (child.gameObject.name == "Threat") {
                         child.GetComponent<TextMeshProUGUI>().SetText($"Threat {unit.currentThreatLevel} / {unit.maxThreatLevel}");
                     }
-                    if (child.gameObject.name == "Heart")
-                    {
+                    if (child.gameObject.name == "Heart") {
                         //Set the color of the units heart here?
                     }
-                    if(child.gameObject.name == "FakeSpriteMask")
-                    {
+                    if (child.gameObject.name == "FakeSpriteMask") {
                         //Adjust the mask so that the heart stays centered, and it masks of a percentage of the heart based on missing health.
                         float defaultHeight = 50;
-                        float heightToAdd =  2 * (97 * (float)unit.currentHP/(float)unit.maxHP);
+                        float heightToAdd = 2 * (97 * (float)unit.currentHP / (float)unit.maxHP);
                         RectTransform rectTransform = child.GetComponent<RectTransform>();
                         rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, defaultHeight + heightToAdd);
-                        rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, rectTransform.anchoredPosition3D.y -heightToAdd/2);
+                        rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, rectTransform.anchoredPosition3D.y - heightToAdd / 2);
                     }
-                    if(child.gameObject.name == "HP")
-                    {
+                    if (child.gameObject.name == "HP") {
                         child.GetComponent<TextMeshProUGUI>().SetText($"HP\n {unit.currentHP} / {unit.maxHP}");
                     }
-                    
+
                 }
                 go.transform.SetParent(turnOrderPanel.transform);
                 float heightToMatch = turnOrderPanel.transform.GetComponent<RectTransform>().sizeDelta.y - 4;
-                go.transform.localScale = new Vector3(heightToMatch/200, heightToMatch/200, go.transform.localScale.z);
+                go.transform.localScale = new Vector3(heightToMatch / 200, heightToMatch / 200, go.transform.localScale.z);
                 currentCount++;
                 if (currentCount >= maxCount) { break; }
             }
@@ -414,38 +360,29 @@ public class GameFlowController : MonoBehaviour
     #endregion
 
     #region PlayerTurn
-    private IEnumerator PlayerTurn()
-    {
+    private IEnumerator PlayerTurn() {
         //playerTurnUI.SetActive(true);
-        while(true)
-        {
+        while (true) {
             //Fetch a hero that hasn't taken their turn.
             currentUnit = null;
-            foreach(Unit hero in heroesCurrentBattleList)
-            {
-                if(!hero.IsDead() && !hero.turnTaken)
-                {
+            foreach (Unit hero in heroesCurrentBattleList) {
+                if (!hero.IsDead() && !hero.turnTaken) {
                     currentUnit = hero;
                     //hero.turnTaken = true;
                     break;
                 }
-            }            
+            }
             //Take their turn
-            if (currentUnit != null)
-            {
+            if (currentUnit != null) {
                 DisplayBattleMessage(currentUnit.name + " is the acting hero!");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
-                if (currentUnit.defensiveStance > 0)
-                {
+                if (currentUnit.defensiveStance > 0) {
                     currentUnit.defensiveStance--;
-                    if (currentUnit.defensiveStance == 0)
-                    {
+                    if (currentUnit.defensiveStance == 0) {
                         DisplayBattleMessage($"{currentUnit.name} is no longer in a defensive stance.");
-                        while (messageBoxNeedsUserConfirmation)
-                        {
+                        while (messageBoxNeedsUserConfirmation) {
                             yield return null;
                         }
                     }
@@ -459,16 +396,14 @@ public class GameFlowController : MonoBehaviour
                     go.GetComponent<TextMeshProUGUI>().text = $"{currentUnit.name}'s Turn";
                     go.transform.SetParent(actionButtonsPanel.transform);
                 }
-                if(currentUnit.stableActionsAndNames.Count > 0)
-                {
+                if (currentUnit.stableActionsAndNames.Count > 0) {
                     {
                         GameObject go = Instantiate(actionGroupLabelPrefab);
                         go.name = $"Stable Actions Label";
                         go.GetComponent<TextMeshProUGUI>().text = $"Stable Actions";
                         go.transform.SetParent(actionButtonsPanel.transform);
                     }
-                    foreach ((Action, String) stableActionAndName in currentUnit.stableActionsAndNames)
-                    {
+                    foreach ((Action, String) stableActionAndName in currentUnit.stableActionsAndNames) {
                         GameObject go = Instantiate(actionButtonPrefab);
                         go.GetComponent<Button>().onClick.AddListener(() => stableActionAndName.Item1.Invoke());
                         go.name = stableActionAndName.Item2 + " button";
@@ -476,8 +411,7 @@ public class GameFlowController : MonoBehaviour
                         go.transform.SetParent(actionButtonsPanel.transform);
                     }
                 }
-                if(buttonActionsAndNames.Count > 0)
-                {
+                if (buttonActionsAndNames.Count > 0) {
                     GameObject go = Instantiate(actionGroupLabelPrefab);
                     go.name = $"Unstable Actions Label";
                     go.GetComponent<TextMeshProUGUI>().text = $"Unstable Actions";
@@ -485,10 +419,8 @@ public class GameFlowController : MonoBehaviour
 
                 }
                 List<(Action, String)> pickedActions = new List<(Action, string)>();
-                for (int i = 0; i < 18; i++)
-                {
-                    if(buttonActionsAndNames.Count == 0)
-                    {
+                for (int i = 0; i < 18; i++) {
+                    if (buttonActionsAndNames.Count == 0) {
                         break;
                     }
                     (Action, String) a = buttonActionsAndNames[UnityEngine.Random.Range(0, buttonActionsAndNames.Count)];
@@ -502,8 +434,7 @@ public class GameFlowController : MonoBehaviour
                 }
 
 
-                while (currentUnitTakingAction)
-                {
+                while (currentUnitTakingAction) {
                     //Get the user selection from the UI, handle the event, display the message to user and then end the turn.
                     yield return null;
                 }
@@ -513,63 +444,49 @@ public class GameFlowController : MonoBehaviour
 
                 UpdateTurnOrderPanel();
 
-                if (CheckBattleLost())
-                {
-                    Debug.Log("Players have Lost");
+                if (CheckBattleLost()) {
+
                     gameState = GameState.BATTLE_LOST;
                     StartCoroutine(BattleLost());
                     break;
                 }
-                if (CheckBattleWon())
-                {
-                    Debug.Log("Players have Won");
+                if (CheckBattleWon()) {
+
                     gameState = GameState.BATTLE_WON;
                     StartCoroutine(BattleWon());
                     break;
                 }
-            }
-            else
-            {
-                foreach(Unit hero in heroesCurrentBattleList)
-                {
+            } else {
+                foreach (Unit hero in heroesCurrentBattleList) {
                     hero.turnTaken = false;
                 }
                 break;
             }
         }
-        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON)
-        {
+        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON) {
             gameState = GameState.ENEMY_TURN;
             StartCoroutine(EnemyTurn());
-        }            
+        }
     }
 
-    private void PlayerTurnInput()
-    {
+    private void PlayerTurnInput() {
 
     }
     #endregion
 
     #region EnemyTurn
-    private IEnumerator EnemyTurn()
-    {
-        while (true)
-        {
+    private IEnumerator EnemyTurn() {
+        while (true) {
             List<Unit> highestThreatsTargets = new List<Unit>();
             Unit highestThreatUnit = null;
             int highestThreatCount = 0;
-            foreach(Unit hero in heroesCurrentBattleList)
-            {
-                if (!hero.IsDead())
-                {
-                    if(hero.currentThreatLevel > highestThreatCount)
-                    {
+            foreach (Unit hero in heroesCurrentBattleList) {
+                if (!hero.IsDead()) {
+                    if (hero.currentThreatLevel > highestThreatCount) {
                         highestThreatsTargets.Clear();
                         highestThreatsTargets.Add(hero);
                         highestThreatCount = hero.currentThreatLevel;
-                    }
-                    else if(hero.currentThreatLevel == highestThreatCount)
-                    {
+                    } else if (hero.currentThreatLevel == highestThreatCount) {
                         highestThreatsTargets.Add(hero);
                     }
                 }
@@ -582,108 +499,78 @@ public class GameFlowController : MonoBehaviour
             int mostHealingNeeded = 0;
             //Fetch a enemy that hasn't taken their turn.
             currentUnit = null;
-            foreach (Unit enemy in enemiesCurrentBattleList)
-            {
-                if (!enemy.IsDead())
-                {
-                    if(enemy.maxHP > enemy.currentHP)
-                    {
-                        if(enemy.maxHP-enemy.currentHP > mostHealingNeeded)
-                        {
+            foreach (Unit enemy in enemiesCurrentBattleList) {
+                if (!enemy.IsDead()) {
+                    if (enemy.maxHP > enemy.currentHP) {
+                        if (enemy.maxHP - enemy.currentHP > mostHealingNeeded) {
                             woundedUnits.Clear();
                             woundedUnits.Add(enemy);
-                            mostHealingNeeded = enemy.maxHP-enemy.currentHP;
-                        }
-                        else if (enemy.maxHP - enemy.currentHP == mostHealingNeeded)
-                        {
+                            mostHealingNeeded = enemy.maxHP - enemy.currentHP;
+                        } else if (enemy.maxHP - enemy.currentHP == mostHealingNeeded) {
                             woundedUnits.Add(enemy);
                         }
                     }
-                    if(currentUnit == null && !enemy.turnTaken)
-                    {
+                    if (currentUnit == null && !enemy.turnTaken) {
                         currentUnit = enemy;
                     }
                 }
             }
-            if(woundedUnits.Count > 0)
-            {
+            if (woundedUnits.Count > 0) {
                 mostWoundedUnit = woundedUnits[UnityEngine.Random.Range(0, woundedUnits.Count)];
             }
-            
+
 
             //Take their turn
-            if (currentUnit != null)
-            {
+            if (currentUnit != null) {
                 DisplayBattleMessage($"The enemy {currentUnit.name} is about to act!");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
-                if (currentUnit.defensiveStance > 0)
-                {
+                if (currentUnit.defensiveStance > 0) {
                     currentUnit.defensiveStance--;
-                    if (currentUnit.defensiveStance == 0)
-                    {
+                    if (currentUnit.defensiveStance == 0) {
                         DisplayBattleMessage($"{currentUnit.name} is no longer in a defensive stance.");
-                        while (messageBoxNeedsUserConfirmation)
-                        {
+                        while (messageBoxNeedsUserConfirmation) {
                             yield return null;
                         }
                     }
                 }
                 currentUnitTakingAction = true;
-                if(turn % 4 == 0 && currentUnit.name == "Ogre")
-                {
+                if (turn % 4 == 0 && currentUnit.name == "Ogre") {
                     DisplayBattleMessage("The ogre lets loose a sweeping attack!");
-                    while (messageBoxNeedsUserConfirmation)
-                    {
+                    while (messageBoxNeedsUserConfirmation) {
                         yield return null;
                     }
-                    foreach(Unit hero in heroesCurrentBattleList)
-                    {
+                    foreach (Unit hero in heroesCurrentBattleList) {
                         currentUnitTakingAction = true;
                         currentTarget = hero;
-                        StartCoroutine(OnAttack());
-                        while (currentUnitTakingAction)
-                        {
+                        yield return OnAttack();
+                        while (currentUnitTakingAction) {
                             yield return null;
                         }
                     }
-                }
-                else if (turn % 3 == 0 && currentUnit.name == "Ogre")
-                {
+                } else if (turn % 3 == 0 && currentUnit.name == "Ogre") {
                     DisplayBattleMessage("The Ogre is winding up an attack!");
-                    while (messageBoxNeedsUserConfirmation)
-                    {
+                    while (messageBoxNeedsUserConfirmation) {
                         yield return null;
                     }
                     currentUnitTakingAction = false;
-                }
-                else
-                {
+                } else {
                     float r = UnityEngine.Random.Range(0f, 1f);
-                    if (mostWoundedUnit != null && currentUnit.name == "Goblin Cleric")
-                    {
+                    if (mostWoundedUnit != null && currentUnit.name == "Goblin Cleric") {
                         currentTarget = mostWoundedUnit;
-                        StartCoroutine(OnHeal());
-                    }
-                    else if(currentUnit.defensiveStance == 0 && r > .75f)
-                    {
-                        StartCoroutine(OnDefensiveStance());
-                    }
-                    else if(currentUnit.maxHP > currentUnit.currentHP && r > .5f)
-                    {
-                        StartCoroutine(OnRest());
-                    }
-                    else
-                    {
+                        yield return OnHeal();
+                    } else if (currentUnit.defensiveStance == 0 && r > .75f) {
+                        yield return OnDefensiveStance();
+                    } else if (currentUnit.maxHP > currentUnit.currentHP && r > .5f) {
+                        yield return OnRest();
+                    } else {
                         currentTarget = highestThreatUnit;
-                        StartCoroutine(OnAttack());
+                        yield return OnAttack();
                     }
                 }
 
-                while (currentUnitTakingAction)
-                {
+                while (currentUnitTakingAction) {
                     yield return null;
                 }
 
@@ -693,225 +580,179 @@ public class GameFlowController : MonoBehaviour
 
                 UpdateTurnOrderPanel();
 
-                if (CheckBattleLost())
-                {
-                    Debug.Log("Players Have Lost");
+                if (CheckBattleLost()) {
                     gameState = GameState.BATTLE_LOST;
                     StartCoroutine(BattleLost());
                     break;
                 }
-                if (CheckBattleWon())
-                {
-                    Debug.Log("Players have won");
+                if (CheckBattleWon()) {
                     gameState = GameState.BATTLE_WON;
                     StartCoroutine(BattleWon());
                     break;
                 }
-            }
-            else
-            {
-                foreach(Unit enemy in enemiesCurrentBattleList)
-                {
+            } else {
+                foreach (Unit enemy in enemiesCurrentBattleList) {
                     enemy.turnTaken = false;
                 }
                 turn++;
                 break;
             }
         }
-        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON)
-        {
+        if (gameState != GameState.BATTLE_LOST && gameState != GameState.BATTLE_WON) {
             gameState = GameState.PLAYER_TURN;
             StartCoroutine(PlayerTurn());
         }
     }
 
-    private void EnemyTurnInput()
-    {
+    private void EnemyTurnInput() {
     }
     #endregion
 
     #region BattleWon
-    private IEnumerator BattleWon()
-    {
+    private IEnumerator BattleWon() {
         currentBattleIndex++;
         //Check if there are more battles, and if not display a victory screen.
-        if (currentBattleIndex < enemiesInEachBattleMasterList.Count)
-        {
+        if (currentBattleIndex < enemiesInEachBattleMasterList.Count) {
             //Check a Dictionary for any story text
 
             //There are more battles
             DisplayGeneralMessage("The battle has been won, but the journey is not over.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
             gameState = GameState.BATTLE_START;
             StartCoroutine(BattleStart());
-        }
-        else
-        {
+        } else {
             bool allSkillsStabilized = true;
-            foreach(Unit hero in heroesMasterList)
-            {
-                if(hero.stableActionsAndNames.Count < 4)
-                {
+            foreach (Unit hero in heroesMasterList) {
+                if (hero.stableActionsAndNames.Count < 4) {
                     allSkillsStabilized = false;
                     break;
                 }
             }
             DisplayGeneralMessage("The goblin encampment has been cleared, and the heroes have prevailed!");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
-            if (allSkillsStabilized)
-            {
+            if (allSkillsStabilized) {
                 DisplayGeneralMessage("The heroes still may not know what comes next, but through these encounters they have finally remembered what it's like to have a stable party.");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
-            }
-            else
-            {
+            } else {
                 DisplayGeneralMessage("The heroes may have made it through this encounter, but can't help the nagging feeling something about the party still isn't quite right.");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
             }
             DisplayGeneralMessage("Congratulations, and thanks for playing!");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
             OnQuitGameButton();
         }
     }
 
-    private void BattleWonInput()
-    {
+    private void BattleWonInput() {
     }
 
-    private bool CheckBattleWon()
-    {
-        foreach(Unit enemy in enemiesCurrentBattleList)
-        {
-            if (!enemy.IsDead())
-            {
+    private bool CheckBattleWon() {
+        foreach (Unit enemy in enemiesCurrentBattleList) {
+            if (!enemy.IsDead()) {
                 return false;
             }
         }
-        Debug.Log("Battle won");
+
         return true;
     }
     #endregion
 
     #region BattleLost
-    private IEnumerator BattleLost()
-    {
+    private IEnumerator BattleLost() {
         DisplayGeneralMessage("Struggle as you might, you could not prevail. Perhaps the next group of adventurers will be a bit more stable.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
         //Reset the list and start over?
         heroesCurrentBattleList.Clear();
-        foreach (Unit hero in heroesMasterList)
-        {
+        foreach (Unit hero in heroesMasterList) {
             heroesCurrentBattleList.Add(new Unit(hero));
         }
         gameState = GameState.TITLE;
-        if (gameState == GameState.TITLE)
-        {
+        if (gameState == GameState.TITLE) {
             StartCoroutine(Title());
         }
 
     }
 
-    private void BattleLostInput()
-    {
+    private void BattleLostInput() {
 
     }
 
-    private bool CheckBattleLost()
-    {
-        foreach(Unit hero in heroesCurrentBattleList)
-        {
-            if (!hero.IsDead())
-            {
+    private bool CheckBattleLost() {
+        foreach (Unit hero in heroesCurrentBattleList) {
+            if (!hero.IsDead()) {
                 return false;
             }
         }
-        Debug.Log("battle lost");
+
         return true;
     }
     #endregion    
 
-    private void DisplayBattleMessage(String message)
-    {
+    private void DisplayBattleMessage(String message) {
         messageBattlePanel.gameObject.SetActive(true);
         messageBattlePanel.transform.GetComponentInChildren<TextMeshProUGUI>().text = message;
         messageBoxNeedsUserConfirmation = true;
     }
 
-    private void DisplayGeneralMessage(String message)
-    {
+    private void DisplayGeneralMessage(String message) {
         messageGeneralPanel.gameObject.SetActive(true);
         messageGeneralPanel.transform.GetComponentInChildren<TextMeshProUGUI>().text = message;
         messageBoxNeedsUserConfirmation = true;
     }
 
-    private void StopDisplayingMessage()
-    {
-        if (messageBoxNeedsUserConfirmation)
-        {
+    private void StopDisplayingMessage() {
+        if (messageBoxNeedsUserConfirmation) {
             messageBoxNeedsUserConfirmation = false;
             messageGeneralPanel.gameObject.SetActive(false);
             messageBattlePanel.gameObject.SetActive(false);
         }
     }
 
-    public void OnRestButton()
-    {
+    public void OnRestButton() {
         StartCoroutine(OnRest());
     }
 
-    public IEnumerator OnRest()
-    {
+    public IEnumerator OnRest() {
         ClearPanelChildren(actionButtonsPanel);
 
         int prevHP = currentUnit.currentHP;
         currentUnit.Rest();
         int newHP = currentUnit.currentHP;
         DisplayBattleMessage($"{currentUnit.name} rested, restoring {newHP - prevHP} HP.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.ModifyThreat(-1);
         int newThreat = currentUnit.currentThreatLevel;
         DisplayBattleMessage($"{currentUnit.name} reduced threat by {newThreat - prevThreat}.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
 
         currentUnitTakingAction = false;
     }
 
-    public void OnAttackButton()
-    {
+    public void OnAttackButton() {
         StartCoroutine(OnAttack());
     }
 
-    public IEnumerator OnAttack()
-    {
+    public IEnumerator OnAttack() {
         TargetSelection();
 
-        while (currentTarget == null)
-        {
+        while (currentTarget == null) {
             yield return null;
         }
         ClearPanelChildren(actionButtonsPanel);
@@ -920,30 +761,24 @@ public class GameFlowController : MonoBehaviour
         bool fatal = currentTarget.TakeDamage(currentUnit.damage);
         int newHealth = currentTarget.currentHP;
 
-        DisplayBattleMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth-newHealth} damage.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        DisplayBattleMessage($"{currentUnit.name} attacked {currentTarget.name} for {prevHealth - newHealth} damage.");
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
-        if (fatal)
-        {
+        if (fatal) {
             int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(3);
             int newThreat = currentUnit.currentThreatLevel;
-            DisplayBattleMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat-prevThreat}.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            DisplayBattleMessage($"{currentTarget.name} has taken fatal damage. {currentUnit.name} increased threat by {newThreat - prevThreat}.");
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
-        }
-        else
-        {
+        } else {
             int prevThreat = currentUnit.currentThreatLevel;
             currentUnit.ModifyThreat(1);
             int newThreat = currentUnit.currentThreatLevel;
             DisplayBattleMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
         }
@@ -951,131 +786,77 @@ public class GameFlowController : MonoBehaviour
         currentUnitTakingAction = false;
     }
 
-    public void OnHideButton()
-    {
+    public void OnHideButton() {
         StartCoroutine(OnHide());
     }
 
-    public IEnumerator OnHide()
-    {
+    public IEnumerator OnHide() {
         ClearPanelChildren(actionButtonsPanel);
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Hide();
         int newThreat = currentUnit.currentThreatLevel;
-        DisplayBattleMessage($"{currentUnit.name} hid, reducing threat by {prevThreat-newThreat}.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        DisplayBattleMessage($"{currentUnit.name} hid, reducing threat by {prevThreat - newThreat}.");
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
-        if (currentUnit.name == "Rogue" && !currentUnit.stableActionsAndNames.Contains((OnHideButton, "Hide")))
-        {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Hide Stabilized!");
-            currentUnit.stableActionsAndNames.Add((OnHideButton, "Hide"));
-            foreach (Unit hero in heroesMasterList)
-            {
-                if (hero.name == "Rogue")
-                {
-                    hero.stableActionsAndNames.Add((OnHideButton, "Hide"));
-                }
-            }
-            buttonActionsAndNames.Remove((OnHideButton, "Hide"));
-            while (messageBoxNeedsUserConfirmation)
-            {
-                yield return null;
-            }
-        }
+        yield return AttemptStabilizeAction("Rogue", (OnHideButton, "Hide"));
         currentUnitTakingAction = false;
     }
 
-    public void OnSneakAttackButton()
-    {
+    public void OnSneakAttackButton() {
         StartCoroutine(OnSneakAttack());
     }
 
-    public IEnumerator OnSneakAttack()
-    {
+    public IEnumerator OnSneakAttack() {
         TargetSelection();
-        while (currentTarget == null)
-        {
+        while (currentTarget == null) {
             yield return null;
         }
         ClearPanelChildren(actionButtonsPanel);
         bool lowestThreat = true;
-        if (heroesCurrentBattleList.Contains(currentUnit))
-        {
-            foreach(Unit hero in heroesCurrentBattleList)
-            {
-                if(currentUnit.currentThreatLevel >= hero.currentThreatLevel && currentUnit != hero)
-                {
+        if (heroesCurrentBattleList.Contains(currentUnit)) {
+            foreach (Unit hero in heroesCurrentBattleList) {
+                if (currentUnit.currentThreatLevel >= hero.currentThreatLevel && currentUnit != hero) {
                     lowestThreat = false;
                     break;
                 }
             }
         }
-        if (enemiesCurrentBattleList.Contains(currentUnit))
-        {
-            foreach(Unit enemy in enemiesCurrentBattleList)
-            {
-                if(currentUnit.currentThreatLevel >= enemy.currentThreatLevel)
-                {
+        if (enemiesCurrentBattleList.Contains(currentUnit)) {
+            foreach (Unit enemy in enemiesCurrentBattleList) {
+                if (currentUnit.currentThreatLevel >= enemy.currentThreatLevel) {
                     lowestThreat = false;
                     break;
                 }
             }
         }
 
-        if (lowestThreat)
-        {
+        if (lowestThreat) {
             int prevHealth = currentTarget.currentHP;
             bool fatal = currentTarget.TakeDamage(currentUnit.damage * 3);
             int newHealth = currentTarget.currentHP;
-            DisplayBattleMessage($"{currentUnit.name} snuck up on {currentTarget.name}, dealing {prevHealth-newHealth} damage!");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            DisplayBattleMessage($"{currentUnit.name} snuck up on {currentTarget.name}, dealing {prevHealth - newHealth} damage!");
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
-            if (fatal)
-            {
+            if (fatal) {
                 DisplayBattleMessage($"{currentTarget.name} has taken fatal damage, but no one noticed. {currentUnit.name}'s current threat remains {currentUnit.currentThreatLevel}.");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
-            }
-            else
-            {
+            } else {
                 int prevThreat = currentUnit.currentThreatLevel;
                 currentUnit.ModifyThreat(2);
                 int newThreat = currentUnit.currentThreatLevel;
                 DisplayBattleMessage($"{currentUnit.name} increased threat by {newThreat - prevThreat}.");
-                while (messageBoxNeedsUserConfirmation)
-                {
+                while (messageBoxNeedsUserConfirmation) {
                     yield return null;
                 }
             }
-            if (currentUnit.name == "Rogue" && !currentUnit.stableActionsAndNames.Contains((OnSneakAttackButton, "Sneak Attack")))
-            {
-                DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Sneak Attack Stabilized!");
-                currentUnit.stableActionsAndNames.Add((OnSneakAttackButton, "Sneak Attack"));
-                foreach(Unit hero in heroesMasterList)
-                {
-                    if(hero.name == "Rogue")
-                    {
-                        hero.stableActionsAndNames.Add((OnSneakAttackButton, "Sneak Attack"));
-                    }
-                }
-                buttonActionsAndNames.Remove((OnSneakAttackButton, "Sneak Attack"));
-                while (messageBoxNeedsUserConfirmation)
-                {
-                    yield return null;
-                }
-            }
-        }
-        else
-        {
+            yield return AttemptStabilizeAction("Rogue", (OnSneakAttackButton, "Sneak Attack"));
+        } else {
             DisplayBattleMessage($"{currentUnit.name} attempted to sneak attack, but {currentTarget.name} noticed because their threat was too high.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
         }
@@ -1083,53 +864,31 @@ public class GameFlowController : MonoBehaviour
         currentUnitTakingAction = false;
     }
 
-    public void OnIntimidateButton()
-    {
+    public void OnIntimidateButton() {
         StartCoroutine(OnIntimidate());
     }
 
-    public IEnumerator OnIntimidate()
-    {
+    public IEnumerator OnIntimidate() {
         ClearPanelChildren(actionButtonsPanel);
         int prevThreat = currentUnit.currentThreatLevel;
         currentUnit.Intimidate();
         int newThreat = currentUnit.currentThreatLevel;
         DisplayBattleMessage($"{currentUnit.name} intimidated the enemy, increasing threat by {newThreat - prevThreat}.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
-        if (currentUnit.name == "Warrior" && !currentUnit.stableActionsAndNames.Contains((OnIntimidateButton, "Intimidate")))
-        {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Intimidate Stabilized!");
-            currentUnit.stableActionsAndNames.Add((OnIntimidateButton, "Intimidate"));
-            foreach (Unit hero in heroesMasterList)
-            {
-                if (hero.name == "Warrior")
-                {
-                    hero.stableActionsAndNames.Add((OnIntimidateButton, "Intimidate"));
-                }
-            }
-            buttonActionsAndNames.Remove((OnIntimidateButton, "Intimidate"));
-            while (messageBoxNeedsUserConfirmation)
-            {
-                yield return null;
-            }
-        }
+        yield return AttemptStabilizeAction("Warrior", (OnIntimidateButton, "Intimidate"));
         currentUnitTakingAction = false;
     }
 
-    public void OnHealButton()
-    {
+    public void OnHealButton() {
         StartCoroutine(OnHeal());
     }
 
-    public IEnumerator OnHeal()
-    {
+    public IEnumerator OnHeal() {
         TargetSelection();
 
-        while (currentTarget == null)
-        {
+        while (currentTarget == null) {
             yield return null;
         }
         ClearPanelChildren(actionButtonsPanel);
@@ -1137,156 +896,102 @@ public class GameFlowController : MonoBehaviour
         int prevHP = currentTarget.currentHP;
         currentTarget.Heal(currentUnit.restoration);
         int newHP = currentUnit.currentHP;
-        DisplayBattleMessage($"{currentUnit.name} healed {currentTarget.name} for {newHP-prevHP}.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        DisplayBattleMessage($"{currentUnit.name} healed {currentTarget.name} for {newHP - prevHP}.");
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
-        if (currentUnit.name == "Cleric" && !currentUnit.stableActionsAndNames.Contains((OnHealButton, "Heal")))
-        {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Heal Stabilized!");
-            currentUnit.stableActionsAndNames.Add((OnHealButton, "Heal"));
-            foreach (Unit hero in heroesMasterList)
-            {
-                if (hero.name == "Cleric")
-                {
-                    hero.stableActionsAndNames.Add((OnHealButton, "Heal"));
-                }
-            }
-            buttonActionsAndNames.Remove((OnHealButton, "Heal"));
-            while (messageBoxNeedsUserConfirmation)
-            {
-                yield return null;
-            }
-        }
+        yield return AttemptStabilizeAction("Cleric", (OnHealButton, "Heal"));
         currentUnitTakingAction = false;
     }
 
-    public void OnHealingCircleButton()
-    {
+    public void OnHealingCircleButton() {
         StartCoroutine(OnHealingCircle());
     }
 
-    public IEnumerator OnHealingCircle()
-    {
+    public IEnumerator OnHealingCircle() {
         ClearPanelChildren(actionButtonsPanel);
 
         DisplayBattleMessage($"{currentUnit.name} begins drawing a symbols on the ground.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
         DisplayBattleMessage($"Light pierces down radiatng in a circle near the symbols.");
-        while (messageBoxNeedsUserConfirmation)
-        {
+        while (messageBoxNeedsUserConfirmation) {
             yield return null;
         }
-        foreach (Unit hero in heroesCurrentBattleList)
-        {
+        foreach (Unit hero in heroesCurrentBattleList) {
             int prevHP = hero.currentHP;
-            hero.Heal(currentUnit.restoration/3);
+            hero.Heal(currentUnit.restoration / 3);
             int newHP = hero.currentHP;
             DisplayBattleMessage($"{currentUnit.name} healed {hero.name} for {newHP - prevHP}.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
         }
-        if (currentUnit.name == "Cleric" && !currentUnit.stableActionsAndNames.Contains((OnHealingCircleButton, "Healing Circle")))
-        {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Healing Circle Stabilized!");
-            currentUnit.stableActionsAndNames.Add((OnHealingCircleButton, "Healing Circle"));
-            foreach (Unit hero in heroesMasterList)
-            {
-                if (hero.name == "Cleric")
-                {
-                    hero.stableActionsAndNames.Add((OnHealingCircleButton, "Healing Circle"));
-                }
-            }
-            buttonActionsAndNames.Remove((OnHealingCircleButton, "Healing Circle"));
-            while (messageBoxNeedsUserConfirmation)
-            {
-                yield return null;
-            }
-        }
+        yield return AttemptStabilizeAction("Cleric", (OnHealingCircleButton, "Healing Circle"));
         currentUnitTakingAction = false;
     }
 
-    public void OnDefensiveStanceButton()
-    {
+    public void OnDefensiveStanceButton() {
         StartCoroutine(OnDefensiveStance());
     }
 
-    public IEnumerator OnDefensiveStance()
-    {
+    public IEnumerator OnDefensiveStance() {
         ClearPanelChildren(actionButtonsPanel);
-        if (currentUnit.defensiveStance > 0)
-        {
+        if (currentUnit.defensiveStance > 0) {
             DisplayBattleMessage($"{currentUnit.name} maintained a defensive stance.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
             currentUnit.defensiveStance = 2;
-        }
-        else
-        {
+        } else {
             DisplayBattleMessage($"{currentUnit.name} took a defensive stance.");
-            while (messageBoxNeedsUserConfirmation)
-            {
+            while (messageBoxNeedsUserConfirmation) {
                 yield return null;
             }
             currentUnit.defensiveStance = 2;
         }
-
-        if (currentUnit.name == "Warrior" && !currentUnit.stableActionsAndNames.Contains((OnDefensiveStanceButton, "Defensive Stance")))
-        {
-            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Defensive Stance Stabilized!");
-            currentUnit.stableActionsAndNames.Add((OnDefensiveStanceButton, "Defensive Stance"));
-            foreach (Unit hero in heroesMasterList)
-            {
-                if (hero.name == "Warrior")
-                {
-                    hero.stableActionsAndNames.Add((OnDefensiveStanceButton, "Defensive Stance"));
-                }
-            }
-            buttonActionsAndNames.Remove((OnDefensiveStanceButton, "Defensive Stance"));
-            while (messageBoxNeedsUserConfirmation)
-            {
-                yield return null;
-            }
-        }
-        
+        yield return AttemptStabilizeAction("Warrior", (OnDefensiveStanceButton, "Defensive Stance"));
         currentUnitTakingAction = false;
     }
 
-    public void OnQuitGameButton()
-    {
-        #if UNITY_STANDALONE
-            Application.Quit();
-        #endif
-        #if UNITY_EDITOR
-            EditorApplication.ExitPlaymode();
-        #endif
+    private IEnumerator AttemptStabilizeAction(String unitNameThatCanStabilizeAction, (Action, String) actionAndNameToStabilize) {
+        if (currentUnit.name == unitNameThatCanStabilizeAction && !currentUnit.stableActionsAndNames.Contains(actionAndNameToStabilize)) {
+            DisplayBattleMessage($"The {currentUnit.name} is beginning to remember it's calling. Defensive Stance Stabilized!");
+            currentUnit.stableActionsAndNames.Add(actionAndNameToStabilize);
+            foreach (Unit hero in heroesMasterList) {
+                if (hero.name == "Warrior") {
+                    hero.stableActionsAndNames.Add(actionAndNameToStabilize);
+                }
+            }
+            buttonActionsAndNames.Remove(actionAndNameToStabilize);
+            while (messageBoxNeedsUserConfirmation) {
+                yield return null;
+            }
+        }
     }
 
-    public void OnPauseToggleButton()
-    {
-        if (pausedGame)
-        {
+    public void OnQuitGameButton() {
+#if UNITY_STANDALONE
+        Application.Quit();
+#endif
+#if UNITY_EDITOR
+        EditorApplication.ExitPlaymode();
+#endif
+    }
+
+    public void OnPauseToggleButton() {
+        if (pausedGame) {
             pausedGame = false;
             pauseUI.gameObject.SetActive(false);
-        }
-        else
-        {
+        } else {
             pausedGame = true;
             pauseUI.gameObject.SetActive(true);
         }
     }
 
-    private void TargetSelection()
-    {
-        if(currentTarget != null) { return; } //Don't populate the panel if we already have a target, like when the AI enemies are going to have a target.
+    private void TargetSelection() {
+        if (currentTarget != null) { return; } //Don't populate the panel if we already have a target, like when the AI enemies are going to have a target.
         ClearPanelChildren(actionButtonsPanel);
         AddLabelToPanel(actionButtonsPanel, actionGroupLabelPrefab, "Selectable Heroes");
         AddSelectableUnitsToActionPanel(heroesCurrentBattleList);
@@ -1294,33 +999,30 @@ public class GameFlowController : MonoBehaviour
         AddSelectableUnitsToActionPanel(enemiesCurrentBattleList);
     }
 
-    private static void AddLabelToPanel(GameObject panel, GameObject labelPrefab, String labelText)
-    {
+    private static void AddLabelToPanel(GameObject panel, GameObject labelPrefab, String labelText) {
         GameObject go = Instantiate(labelPrefab);
         go.name = $"Label: {labelText}";
         go.GetComponent<TextMeshProUGUI>().text = labelText;
         go.transform.SetParent(panel.transform);
     }
 
-    private static void AddButtonToPanel(GameObject panel, GameObject buttonPrefab, String buttonText, UnityAction buttonCallback){
+    private static void AddButtonToPanel(GameObject panel, GameObject buttonPrefab, String buttonText, UnityAction buttonCallback) {
         GameObject go = Instantiate(buttonPrefab);
         go.name = $"Button: {buttonText}";
         go.GetComponent<Button>().onClick.AddListener(buttonCallback);
         go.GetComponentInChildren<TextMeshProUGUI>().text = buttonText;
         go.transform.SetParent(panel.transform);
     }
-    private static void ClearPanelChildren(GameObject panel)
-    {
-        foreach (Transform child in panel.transform)
-        {
+    private static void ClearPanelChildren(GameObject panel) {
+        foreach (Transform child in panel.transform) {
             child.gameObject.SetActive(false);
             Destroy(child.gameObject);
         }
     }
 
-    private void AddSelectableUnitsToActionPanel(List<Unit> units){
-        foreach(Unit unit in units){
-            if(!unit.IsDead()){
+    private void AddSelectableUnitsToActionPanel(List<Unit> units) {
+        foreach (Unit unit in units) {
+            if (!unit.IsDead()) {
                 AddButtonToPanel(actionButtonsPanel, actionButtonPrefab, unit.name, () => currentTarget = unit);
             }
         }
