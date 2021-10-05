@@ -10,64 +10,45 @@ using UnityEngine.UI;
 
 public enum GameState { TITLE, CHARACTER_CREATION, BATTLE_START, PLAYER_TURN, ENEMY_TURN, BATTLE_WON, BATTLE_LOST }
 
+//TODO: Where we are Instantiating gameobjects, and destroying them we should instantiate enough for the max amount we'd like to display on start and set them to disabled. 
+    //Then when we would have Instantiated, we should insted set enable the amount that we need and set the properties we care about (including clearing listeners of buttons).
+    //This should reduce some of the absurd amount of garbage that we need to collect.
+
 public class GameFlowController : MonoBehaviour {
-    GameState gameState = GameState.TITLE;
-    private bool titleWaitingOnInput = true;
-    private bool messageBoxNeedsUserConfirmation = false;
-    private bool currentUnitTakingAction = false;
-    private bool pausedGame = false;
+    [SerializeField]
+    private GameObject  titleUI = null, 
+                        battleStartUI = null,
+                        pauseUI = null, 
+                        turnMarkerPrefab = null, 
+                        turnOrderPanel = null,
+                        messageBattlePanel = null,
+                        messageGeneralPanel = null,
+                        actionButtonsPanel = null,
+                        actionButtonPrefab = null,
+                        actionGroupLabelPrefab = null;
+    
+    private bool    titleWaitingOnInput = true,
+                    messageBoxNeedsUserConfirmation = false,
+                    currentUnitTakingAction = false,
+                    pausedGame = false;
 
-    private Unit currentUnit = null;
-    private Unit currentTarget = null;
+    private int     currentBattleIndex,
+                    turn = 1;
+
+    private GameState gameState = GameState.TITLE;
+
+    private Unit    currentUnit = null,
+                    currentTarget = null;
+
+    private readonly List<KeyCode>  enterKey = new List<KeyCode> { KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space, KeyCode.Mouse0 },
+                                    upKey = new List<KeyCode> { KeyCode.UpArrow, KeyCode.W },
+                                    downKey = new List<KeyCode> { KeyCode.DownArrow, KeyCode.S },
+                                    leftKey = new List<KeyCode> { KeyCode.LeftArrow, KeyCode.A },
+                                    rightKey = new List<KeyCode> { KeyCode.RightArrow, KeyCode.D };
+
+    private List<(Action, String)>  buttonActionsAndNames = new List<(Action, string)>();
+
     private (Action, String) actionAndNameToStabilize = (null, null);
-
-    private readonly List<KeyCode> enterKey = new List<KeyCode> { KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space, KeyCode.Mouse0 };
-    private readonly List<KeyCode> upKey = new List<KeyCode> { KeyCode.UpArrow, KeyCode.W };
-    private readonly List<KeyCode> downKey = new List<KeyCode> { KeyCode.DownArrow, KeyCode.S };
-    private readonly List<KeyCode> leftKey = new List<KeyCode> { KeyCode.LeftArrow, KeyCode.A };
-    private readonly List<KeyCode> rightKey = new List<KeyCode> { KeyCode.RightArrow, KeyCode.D };
-
-    private List<(Action, String)> buttonActionsAndNames = new List<(Action, string)>();
-
-    [SerializeField]
-    private GameObject titleUI = null;
-    //[SerializeField]
-    //private GameObject characterCreationUI = null;
-    [SerializeField]
-    private GameObject battleStartUI = null;
-    [SerializeField]
-    private GameObject playerTurnUI = null;
-    [SerializeField]
-    private GameObject enemyTurnUI = null;
-    [SerializeField]
-    private GameObject battleWonUI = null;
-    [SerializeField]
-    private GameObject battleLostUI = null;
-    [SerializeField]
-    private GameObject pauseUI = null;
-
-    [SerializeField]
-    private GameObject turnMarkerPrefab = null;
-    [SerializeField]
-    private GameObject turnOrderPanel = null;
-
-    [SerializeField]
-    private GameObject messageBattlePanel = null;
-    [SerializeField]
-    private GameObject messageGeneralPanel = null;
-    [SerializeField]
-    private GameObject actionButtonsPanel = null;
-    [SerializeField]
-    private GameObject actionButtonPrefab = null;
-    [SerializeField]
-    private GameObject actionGroupLabelPrefab = null;
-
-
-    private int currentBattleIndex;
-    private int turn = 1;
-
-    private List<Unit> heroesMasterList = new List<Unit> { new Unit("Warrior", 1, 3, 1, 10), new Unit("Rogue", 1, 2, 1, 5), new Unit("Cleric", 1, 1, 4, 5) };
-    private List<Unit> heroesCurrentBattleList = new List<Unit>();
 
     private List<List<String>> storyTextbeforeEachBattleList = new List<List<String>>
     {
@@ -103,8 +84,11 @@ public class GameFlowController : MonoBehaviour {
         //Battle 3
         new List<Unit>{ new Unit("Goblin", 3, 1, 1, 5), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Goblin Cleric", 1, 1, 4, 4), new Unit("Ogre", 4, 3, 1, 20) }
     };
-    private List<Unit> enemiesCurrentBattleList = new List<Unit>();
 
+    private List<Unit>  heroesMasterList = new List<Unit> { new Unit("Warrior", 1, 3, 1, 10), new Unit("Rogue", 1, 2, 1, 5), new Unit("Cleric", 1, 1, 4, 5) },
+                        heroesCurrentBattleList = new List<Unit>(),
+                        enemiesCurrentBattleList = new List<Unit>();
+    
     // Start is called before the first frame update
     void Start() {
         buttonActionsAndNames.AddRange(new List<(Action, String)>{(OnDefensiveStanceButton, "Defensive Stance"),
@@ -720,9 +704,7 @@ public class GameFlowController : MonoBehaviour {
         }
     }
 
-    public void OnRestButton() {
-        StartCoroutine(OnRest());
-    }
+    public void OnRestButton() => StartCoroutine(OnRest());
 
     public IEnumerator OnRest() {
         ClearPanelChildren(actionButtonsPanel);
@@ -745,9 +727,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnAttackButton() {
-        StartCoroutine(OnAttack());
-    }
+    public void OnAttackButton() => StartCoroutine(OnAttack());
 
     public IEnumerator OnAttack() {
         TargetSelection();
@@ -786,9 +766,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnHideButton() {
-        StartCoroutine(OnHide());
-    }
+    public void OnHideButton() => StartCoroutine(OnHide());
 
     public IEnumerator OnHide() {
         ClearPanelChildren(actionButtonsPanel);
@@ -803,9 +781,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnSneakAttackButton() {
-        StartCoroutine(OnSneakAttack());
-    }
+    public void OnSneakAttackButton() => StartCoroutine(OnSneakAttack());
 
     public IEnumerator OnSneakAttack() {
         TargetSelection();
@@ -864,9 +840,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnIntimidateButton() {
-        StartCoroutine(OnIntimidate());
-    }
+    public void OnIntimidateButton() => StartCoroutine(OnIntimidate());
 
     public IEnumerator OnIntimidate() {
         ClearPanelChildren(actionButtonsPanel);
@@ -881,9 +855,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnHealButton() {
-        StartCoroutine(OnHeal());
-    }
+    public void OnHealButton() => StartCoroutine(OnHeal());
 
     public IEnumerator OnHeal() {
         TargetSelection();
@@ -904,9 +876,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnHealingCircleButton() {
-        StartCoroutine(OnHealingCircle());
-    }
+    public void OnHealingCircleButton() => StartCoroutine(OnHealingCircle());
 
     public IEnumerator OnHealingCircle() {
         ClearPanelChildren(actionButtonsPanel);
@@ -932,9 +902,7 @@ public class GameFlowController : MonoBehaviour {
         currentUnitTakingAction = false;
     }
 
-    public void OnDefensiveStanceButton() {
-        StartCoroutine(OnDefensiveStance());
-    }
+    public void OnDefensiveStanceButton() => StartCoroutine(OnDefensiveStance());
 
     public IEnumerator OnDefensiveStance() {
         ClearPanelChildren(actionButtonsPanel);
@@ -999,6 +967,14 @@ public class GameFlowController : MonoBehaviour {
         AddSelectableUnitsToActionPanel(enemiesCurrentBattleList);
     }
 
+    private void AddSelectableUnitsToActionPanel(List<Unit> units) {
+        foreach (Unit unit in units) {
+            if (!unit.IsDead()) {
+                AddButtonToPanel(actionButtonsPanel, actionButtonPrefab, unit.name, () => currentTarget = unit);
+            }
+        }
+    }
+
     private static void AddLabelToPanel(GameObject panel, GameObject labelPrefab, String labelText) {
         GameObject go = Instantiate(labelPrefab);
         go.name = $"Label: {labelText}";
@@ -1020,11 +996,5 @@ public class GameFlowController : MonoBehaviour {
         }
     }
 
-    private void AddSelectableUnitsToActionPanel(List<Unit> units) {
-        foreach (Unit unit in units) {
-            if (!unit.IsDead()) {
-                AddButtonToPanel(actionButtonsPanel, actionButtonPrefab, unit.name, () => currentTarget = unit);
-            }
-        }
-    }
+
 }
